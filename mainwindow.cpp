@@ -63,9 +63,12 @@ MainWindow::MainWindow()
 
     createActions();
     createMenus();
-    resize(798, 507);
+    //resize(798, 507);
+
+    parseThread = nullptr;
 
     initUI();
+    readSettings();
 }
 /*
 #ifndef QT_NO_CONTEXTMENU
@@ -84,6 +87,61 @@ void MainWindow::initUI()
     setWindowTitle(tr("parsePcap"));
 }
 
+void MainWindow::writeSettings()
+{
+    QSettings settings("jjkkoo", "parsePcap");
+
+    settings.beginGroup("MainWindow");
+    settings.setValue("size", size());
+    settings.setValue("pos", pos());
+    settings.setValue("pickDirectory", pickDir);
+    settings.setValue("saveDirectory", saveDir);
+    settings.endGroup();
+}
+
+void MainWindow::readSettings()
+{
+    QSettings settings("jjkkoo", "parsePcap");
+
+    settings.beginGroup("MainWindow");
+    resize(settings.value("size", QSize(798, 507)).toSize());
+    move(settings.value("pos", QPoint(200, 200)).toPoint());
+    pickDir = settings.value("pickDirectory", QCoreApplication::applicationDirPath()).toString();
+    saveDir = settings.value("saveDirectory", QCoreApplication::applicationDirPath()).toString();
+    settings.endGroup();
+    qDebug() << QCoreApplication::applicationDirPath()<< "," << QDir::currentPath() << "," << QDir::current().path();
+    qDebug() << pickDir;
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    if (parseThread == nullptr || parseThread->isFinished()) {
+        qDebug() << "ready to exit";
+        event->accept();
+        return;
+    }
+    else {
+        const QMessageBox::StandardButton ret
+            = QMessageBox::warning(this, tr("ParsePcap Exiting Check"),
+                                   tr("Unfinished Actions Detected\n"
+                                      "Really Exiting?"),
+                                   QMessageBox::Yes | QMessageBox::Cancel);
+        switch (ret) {
+            case QMessageBox::Yes:
+                if (parseThread->isRunning()) {
+                    parseThread->stopMe();
+                }
+                writeSettings();
+                event->accept();
+                break;
+            case QMessageBox::Cancel:
+            default:
+                event->ignore();
+                break;
+        }
+    }
+}
+
 void MainWindow::refreshProgress(int value)
 {
     qDebug() << "Handle Thread : " << QThread::currentThreadId();
@@ -94,6 +152,13 @@ void MainWindow::parseFinished()
 {
     m_pProgressBar->hide();
     parseThread->deleteLater();
+}
+
+void MainWindow::cancelAll()
+{
+    if (parseThread->isRunning()){
+        parseThread->stopMe();
+    }
 }
 
 void MainWindow::startParsing(const QStringList &pathList)
@@ -109,12 +174,12 @@ void MainWindow::pickFile()
 {
     qDebug() << "pickFile action";
 
-    QStringList pathList = QFileDialog::getOpenFileNames(this, tr("Pick Pcap Files"),  ".",
+    QStringList pathList = QFileDialog::getOpenFileNames(this, tr("Pick Pcap Files"),  pickDir,
                                                 tr("Pcap Files(*.pcap);;All Files(*.*)"));
     qDebug() << pathList;
     if(!pathList.isEmpty()) {
+        pickDir = QFileInfo(pathList[0]).absolutePath() ;
         foreach (const QString &str, pathList)
-            qDebug() << str;
         startParsing(pathList);
 
     } else {
@@ -130,6 +195,7 @@ void MainWindow::clearFile()
 void MainWindow::exit()
 {
     qDebug() << "exit action";
+    close();
 }
 
 void MainWindow::plot()
@@ -200,7 +266,10 @@ void MainWindow::createActions()
     markAct->setStatusTip(tr("Mark"));
     connect(markAct, &QAction::triggered, this, &MainWindow::mark);
 */
-//    leftAlignAct->setChecked(true);
+
+    QShortcut * escShortcut = new QShortcut(QKeySequence::Cancel, this);
+    connect(escShortcut, &QShortcut::activated, this, &MainWindow::cancelAll);
+    //connect(escShortcut, SIGNAL(activated()), this, SLOT(cancelAll()));
 }
 
 void MainWindow::createMenus()

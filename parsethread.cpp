@@ -1,10 +1,9 @@
-#include <QThread>
-#include <QDebug>
 #include <parsethread.h>
 
 ParseThread::ParseThread(QObject *parent) : QThread(parent)
 {
     qDebug() << "Worker Thread : " << QThread::currentThreadId();
+    m_abort = false;
 }
 
 void ParseThread::run()
@@ -13,10 +12,17 @@ void ParseThread::run()
     int nValue = 0;
     while (nValue < 100)
     {
+        if (m_abort)    return;
         msleep(100);
         ++nValue;
 
         emit resultReady(nValue);
     }
 }
+
+void ParseThread::stopMe()
+{
+    m_abort = true;
+}
+
 

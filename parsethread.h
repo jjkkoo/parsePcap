@@ -1,4 +1,5 @@
 #include <QThread>
+#include <QDebug>
 
 class ParseThread : public QThread
 {
@@ -7,10 +8,16 @@ class ParseThread : public QThread
 public:
     explicit ParseThread(QObject *parent = 0);
 
+signals:
+    void resultReady(int value);
+
+public slots:
+    void stopMe();
 
 protected:
     virtual void run()  ;
 
-signals:
-    void resultReady(int value);
+private:
+    bool m_abort;
+
 };

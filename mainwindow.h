@@ -45,6 +45,10 @@ protected:
     void contextMenuEvent(QContextMenuEvent *event) Q_DECL_OVERRIDE;
 #endif // QT_NO_CONTEXTMENU
 */
+
+protected:
+    void closeEvent(QCloseEvent *event) override;
+
 private slots:
     void pickFile();
     void clearFile();
@@ -56,12 +60,15 @@ private slots:
     //void mark();
     void refreshProgress(int value);
     void parseFinished();
+    void cancelAll();
 
 
 private:
     void createActions();
     void createMenus();
     void initUI();
+    void readSettings();
+    void writeSettings();
     void startParsing(const QStringList &pathList);
 
     QMenu *fileMenu;
@@ -81,8 +88,11 @@ private:
     QChartView *chartView;
     QLineSeries *series;
     QProgressBar *m_pProgressBar;
-    QList <ParseThread> *parseThreadList;
+    ParseThread *parseThread;
+    //QList <ParseThread> *parseThreadList;
     QStringList *parseJobList;
+    QString pickDir;
+    QString saveDir;
 };
 
 #endif
