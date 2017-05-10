@@ -1,5 +1,6 @@
 #include <QThread>
 #include <QDebug>
+#include <QMutex>
 
 class ParseThread : public QThread
 {
@@ -7,6 +8,7 @@ class ParseThread : public QThread
 
 public:
     explicit ParseThread(QObject *parent = 0);
+    ~ParseThread();
 
 signals:
     void resultReady(int value);
@@ -19,5 +21,5 @@ protected:
 
 private:
     bool m_abort;
-
+    QMutex mutex;
 };

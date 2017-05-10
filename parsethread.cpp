@@ -6,6 +6,15 @@ ParseThread::ParseThread(QObject *parent) : QThread(parent)
     m_abort = false;
 }
 
+ParseThread::~ParseThread()
+{
+    mutex.lock();
+    m_abort = true;
+    mutex.unlock();
+
+    wait();
+}
+
 void ParseThread::run()
 {
     qDebug() << "Worker Run Thread : " << QThread::currentThreadId();
@@ -22,7 +31,9 @@ void ParseThread::run()
 
 void ParseThread::stopMe()
 {
+    mutex.lock();
     m_abort = true;
+    mutex.unlock();
 }
 
 

@@ -118,7 +118,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     if (parseThread == nullptr || parseThread->isFinished()) {
         qDebug() << "ready to exit";
         event->accept();
-        return;
+        //return;
     }
     else {
         const QMessageBox::StandardButton ret
