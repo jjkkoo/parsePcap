@@ -115,7 +115,7 @@ void MainWindow::readSettings()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    if (parseThread == nullptr || parseThread->isFinished()) {
+    if (parseThread == nullptr) {
         qDebug() << "ready to exit";
         event->accept();
         //return;
@@ -128,7 +128,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
                                    QMessageBox::Yes | QMessageBox::Cancel);
         switch (ret) {
             case QMessageBox::Yes:
-                if (parseThread->isRunning()) {
+                if (parseThread != nullptr and parseThread->isRunning()) {
                     parseThread->stopMe();
                 }
                 writeSettings();
@@ -152,6 +152,7 @@ void MainWindow::parseFinished()
 {
     m_pProgressBar->hide();
     parseThread->deleteLater();
+    parseThread = nullptr;
 }
 
 void MainWindow::cancelAll()
