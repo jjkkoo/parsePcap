@@ -144,7 +144,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::refreshProgress(int value)
 {
-    qDebug() << "Handle Thread : " << QThread::currentThreadId();
     m_pProgressBar->setValue(value);
 }
 
