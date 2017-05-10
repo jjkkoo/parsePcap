@@ -162,10 +162,10 @@ void MainWindow::cancelAll()
     }
 }
 
-void MainWindow::startParsing(const QStringList &pathList)
+void MainWindow::startParsing(const QString filePath)
 {
     m_pProgressBar->show();
-    parseThread = new ParseThread(this);
+    parseThread = new ParseThread(filePath, this);
     connect(parseThread, &ParseThread::resultReady, this, &MainWindow::refreshProgress);
     connect(parseThread, &ParseThread::finished, this, &MainWindow::parseFinished);
     parseThread->start();
@@ -181,7 +181,7 @@ void MainWindow::pickFile()
     if(!pathList.isEmpty()) {
         pickDir = QFileInfo(pathList[0]).absolutePath() ;
         foreach (const QString &str, pathList)
-        startParsing(pathList);
+            startParsing(str);
 
     } else {
         statusBar()->showMessage("Pick Pcap Files Action Cancelled");

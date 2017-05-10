@@ -69,7 +69,7 @@ private:
     void initUI();
     void readSettings();
     void writeSettings();
-    void startParsing(const QStringList &pathList);
+    void startParsing(const QString filePath);
 
     QMenu *fileMenu;
     QMenu *editMenu;

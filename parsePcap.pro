@@ -16,6 +16,7 @@ TEMPLATE = app
 INCLUDEPATH += e:\WpdPack\Include
 LIBS += c:\WpdPack\Lib\libwpcap.a
 LIBS += c:\WpdPack\Lib\libpacket.a
+LIBS += libws2_32
 
 CONFIG += c++11
 
@@ -30,4 +31,3 @@ HEADERS  += mainwindow.h \
     customtablemodel.h \
     parsethread.h
 
-FORMS    += mainwindow.ui
