@@ -20,6 +20,7 @@ public:
 
 signals:
     void resultReady(int value);
+    void parseSuccess(QList<QStringList> parseResult);
 
 public slots:
     void stopMe();

@@ -28,6 +28,18 @@ typedef struct ip_header{
     u_int   op_pad;         // Option + Padding
 }ip_header;
 
+typedef struct ipv6_header {
+    u_char ver_tf;
+    u_char traffic;
+    u_short label;
+    u_char length[2];
+    u_char next_header;
+    u_char limits;
+    u_char Srcv6[16];
+    u_char Destv6[16];
+}ipv6_header;
+
+
 /* UDP header*/
 typedef struct udp_header{
     u_short sport;          // Source port
@@ -218,6 +230,14 @@ void ParseThread::run()
         printf("Error reading the packets: %s\n", pcap_geterr(fp));
     }
 
+    QList<QStringList> fakeList;
+    for(int i = 0; i < 14; ++i){
+        QStringList fakeString;
+        for(int j = 0; j < 14; ++j)
+            fakeString << QString("fake%1%2").arg(i).arg(j);
+        fakeList.append(fakeString);
+    }
+    emit parseSuccess(fakeList);
 }
 
 void ParseThread::stopMe()

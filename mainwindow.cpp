@@ -10,11 +10,14 @@ MainWindow::MainWindow()
 
     tableView = new QTableView;
     tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    tableView->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    //tableView->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    tableView->resizeColumnsToContents();
 
-    CustomTableModel *model = new CustomTableModel;
-    tableView->setModel(model);
+    tableModel = new CustomTableModel;
+    tableView->setModel(tableModel);
 
+    ComboBoxDelegate* delegate = new ComboBoxDelegate;
+    tableView->setItemDelegateForColumn(COL_codec, delegate);
 
     QChart *chart = new QChart;
     chart->setAnimationOptions(QChart::AllAnimations);
@@ -83,6 +86,7 @@ void MainWindow::contextMenuEvent(QContextMenuEvent *event)
 void MainWindow::initUI()
 {
     m_pProgressBar->hide();
+    chartView->hide();
     statusBar()->showMessage("");
     setWindowTitle(tr("parsePcap"));
 }
@@ -147,7 +151,18 @@ void MainWindow::refreshProgress(int value)
     m_pProgressBar->setValue(value);
 }
 
-void MainWindow::parseFinished()
+void MainWindow::parseFinished(QList<QStringList> parsedList)
+{
+    int beforeAppendRowCount = tableModel->rowCount();
+    tableModel->appendData(parsedList);
+    tableView->resizeColumnsToContents();
+
+    for ( int i = beforeAppendRowCount; i < tableModel->rowCount(); ++i ) {
+        tableView->openPersistentEditor( tableModel->index(i, COL_codec) );
+    }
+}
+
+void MainWindow::parseThrOver()
 {
     m_pProgressBar->hide();
     parseThread->deleteLater();
@@ -161,12 +176,32 @@ void MainWindow::cancelAll()
     }
 }
 
+void MainWindow::copySelection()
+{
+    QItemSelectionModel * selection = tableView->selectionModel();
+    QModelIndexList indexes = selection->selectedIndexes(); //tableView->selectedIndexes()
+    QStringList list ;
+    QModelIndex previous = indexes.first();
+    foreach ( const QModelIndex& index, indexes )
+    {
+        if (index.row() != previous.row())
+        {
+            list.append("\n");
+            previous = index;
+        }
+       list << index.data().toString() ;
+    }
+
+    QApplication::clipboard()->setText( list.join( ", " ) ) ;
+}
+
 void MainWindow::startParsing(const QString filePath)
 {
     m_pProgressBar->show();
     parseThread = new ParseThread(filePath, this);
     connect(parseThread, &ParseThread::resultReady, this, &MainWindow::refreshProgress);
-    connect(parseThread, &ParseThread::finished, this, &MainWindow::parseFinished);
+    connect(parseThread, &ParseThread::parseSuccess, this, &MainWindow::parseFinished);
+    connect(parseThread, &ParseThread::finished, this, &MainWindow::parseThrOver);
     parseThread->start();
 }
 
@@ -201,6 +236,13 @@ void MainWindow::exit()
 void MainWindow::plot()
 {
     qDebug() << "plot action";
+    QItemSelectionModel * selection = tableView->selectionModel();
+    QModelIndexList indexes = selection->selectedIndexes();
+    QSet<int> indexSet;
+    foreach(const QModelIndex& index, indexes){
+        indexSet.insert(index.row());
+    }
+    qDebug() << indexSet;
 }
 
 void MainWindow::exportMedia()
@@ -270,6 +312,9 @@ void MainWindow::createActions()
     QShortcut * escShortcut = new QShortcut(QKeySequence::Cancel, this);
     connect(escShortcut, &QShortcut::activated, this, &MainWindow::cancelAll);
     //connect(escShortcut, SIGNAL(activated()), this, SLOT(cancelAll()));
+
+    QShortcut * copyShortcut = new QShortcut(QKeySequence::Copy, this);
+    connect(copyShortcut, &QShortcut::activated, this, &MainWindow::copySelection);
 }
 
 void MainWindow::createMenus()

@@ -29,6 +29,7 @@ QT_END_NAMESPACE
 #include "customchartmodel.h"
 #include "customtablemodel.h"
 #include "parsethread.h"
+#include "comboboxdelegate.h"
 
 QT_CHARTS_USE_NAMESPACE
 
@@ -59,8 +60,10 @@ private slots:
     void stop();
     //void mark();
     void refreshProgress(int value);
-    void parseFinished();
+    void parseFinished(QList<QStringList> parsedList);
+    void parseThrOver();
     void cancelAll();
+    void copySelection();
 
 
 private:
@@ -85,6 +88,7 @@ private:
     QAction *stopAct;
     //QAction *markAct;
     QTableView *tableView;
+    CustomTableModel *tableModel;
     QChartView *chartView;
     QLineSeries *series;
     QProgressBar *m_pProgressBar;

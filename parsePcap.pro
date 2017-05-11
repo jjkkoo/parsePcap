@@ -13,7 +13,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = parsePcap
 TEMPLATE = app
 
-INCLUDEPATH += e:\WpdPack\Include
+INCLUDEPATH += c:\WpdPack\Include
 LIBS += c:\WpdPack\Lib\libwpcap.a
 LIBS += c:\WpdPack\Lib\libpacket.a
 LIBS += libws2_32
@@ -24,10 +24,12 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     customchartmodel.cpp \
     customtablemodel.cpp \
-    parsethread.cpp
+    parsethread.cpp \
+    comboboxdelegate.cpp
 
 HEADERS  += mainwindow.h \
     customchartmodel.h \
     customtablemodel.h \
-    parsethread.h
+    parsethread.h \
+    comboboxdelegate.h
 
