@@ -49,6 +49,7 @@ typedef struct udp_header{
 }udp_header;
 
 ParseThread::ParseThread(QString jobFile, QObject *parent) : QThread(parent), pcapFileName(jobFile), packetCount(0)
+    ,m_parseResult(new QList<QStringList>())
 {
     qDebug() << "Worker Thread : " << QThread::currentThreadId() << "," << "pcapFileName:" << pcapFileName;
     m_abort = false;
@@ -181,6 +182,10 @@ void ParseThread::run()
 
     int currentPacketNo = 0;
     int currentProgress = 0;
+    m_parseResult->clear();
+    QString sourceIp, srcPort, destIp, destPort, payloadType, ssrc;
+    QSet<u_char> uniquePacketSet;
+
     while((res = pcap_next_ex( fp, &header, &pkt_data)) >= 0)
     {
         if (m_abort)    return;
@@ -222,6 +227,11 @@ void ParseThread::run()
             ih->daddr.byte3,
             ih->daddr.byte4,
             dport);
+
+        if (!uniquePacketSet.contains(pkt_data)) {
+
+        }
+
     }
 
 

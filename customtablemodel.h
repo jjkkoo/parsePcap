@@ -5,6 +5,8 @@
 #include <QtCore/QHash>
 #include <QtCore/QRect>
 
+#ifndef COLUMNS_H
+#define COLUMNS_H
 enum Columns
 {
     COL_source_ip,
@@ -22,6 +24,7 @@ enum Columns
     COL_WrongSeq,
     COL_MaxDelta
 };
+#endif
 
 class CustomTableModel : public QAbstractTableModel
 {

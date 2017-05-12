@@ -242,7 +242,9 @@ void MainWindow::plot()
     foreach(const QModelIndex& index, indexes){
         indexSet.insert(index.row());
     }
-    qDebug() << indexSet;
+    QList<int> indexList = indexSet.toList();
+    qSort(indexList.begin(), indexList.end());
+    qDebug() << indexList;
 }
 
 void MainWindow::exportMedia()
