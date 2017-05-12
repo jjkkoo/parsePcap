@@ -210,6 +210,8 @@ void ParseThread::run()
     QDateTime tempDateTime;
     QSet<QByteArray> uniquePacketSet;
     QByteArray tempByteArray;
+    QList<QStringList> parseResult;// = new QList<QStringList>();
+    QHash<QString, int> parseResultDict;
 
     while((res = pcap_next_ex( fp, &header, &pkt_data)) >= 0)
     {
@@ -217,7 +219,6 @@ void ParseThread::run()
 
         if (100 * ++currentPacketNo / packetCount > currentProgress) {
             emit updateProgress(++currentProgress);
-            //printf("currentProgress: %d", currentProgress);
         }
 
         /* check duplicated packet */
@@ -259,15 +260,12 @@ void ParseThread::run()
             qDebug() << "payloadType:" << payloadType;
             qDebug() << "ssrc:" << ssrc;
 */
+            foreach (const QStringList& tmpSL, parseResult) {
+
+            }
         }
     }
 
-    }
-
-
-    if (res == -1)
-    {
-        printf("Error reading the packets: %s\n", pcap_geterr(fp));
     }
 
     QList<QStringList> fakeList;
