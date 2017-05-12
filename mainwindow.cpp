@@ -9,7 +9,7 @@ MainWindow::MainWindow()
     setCentralWidget(widget);
 
     tableView = new QTableView;
-    tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    //tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     //tableView->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     tableView->resizeColumnsToContents();
 
@@ -155,11 +155,11 @@ void MainWindow::parseFinished(QList<QStringList> parsedList)
 {
     int beforeAppendRowCount = tableModel->rowCount();
     tableModel->appendData(parsedList);
-    tableView->resizeColumnsToContents();
 
     for ( int i = beforeAppendRowCount; i < tableModel->rowCount(); ++i ) {
         tableView->openPersistentEditor( tableModel->index(i, COL_codec) );
     }
+    tableView->resizeColumnsToContents();
 }
 
 void MainWindow::parseThrOver()

@@ -206,12 +206,12 @@ void ParseThread::run()
     int currentPacketNo = 0;
     int currentProgress = 0;
     m_parseResult->clear();
-    QString sourceIp, srcPort, destIp, destPort, payloadType, ssrc;
+    QString sourceIp, srcPort, destIp, destPort, pktDateTime, payloadType, ssrc;
     QDateTime tempDateTime;
     QSet<QByteArray> uniquePacketSet;
     QByteArray tempByteArray;
     QList<QStringList> parseResult;// = new QList<QStringList>();
-    QHash<QString, int> parseResultDict;
+    QHash<QString, int*> parseResultDict;
 
     while((res = pcap_next_ex( fp, &header, &pkt_data)) >= 0)
     {
@@ -222,9 +222,9 @@ void ParseThread::run()
         }
 
         /* check duplicated packet */
-        tempByteArray = QByteArray((char *)pkt_data, header->len);
-        if (!uniquePacketSet.contains(tempByteArray)) {
-            uniquePacketSet.insert(tempByteArray);
+//        tempByteArray = QByteArray((char *)pkt_data, header->len);
+//        if (!uniquePacketSet.contains(tempByteArray)) {
+//            uniquePacketSet.insert(tempByteArray);
 
         /* retireve the position of the ip header */
         ih = (ip_header *) (pkt_data + 14); //length of ethernet header
@@ -245,6 +245,7 @@ void ParseThread::run()
                 rtp_len = 12 + rh->cc * 32;
             }
             tempDateTime = QDateTime::fromTime_t(header->ts.tv_sec);
+            pktDateTime = tempDateTime.toString("yyyy-MM-dd hh:mm:ss") + "." + QString::number(header->ts.tv_usec, 10);
             sourceIp = QString("%1.%2.%3.%4").arg(ih->saddr.byte1).arg(ih->saddr.byte2).arg(ih->saddr.byte3).arg(ih->saddr.byte4);
             destIp = QString("%1.%2.%3.%4").arg(ih->daddr.byte1).arg(ih->daddr.byte2).arg(ih->daddr.byte3).arg(ih->daddr.byte4);
             srcPort = QString("%1").arg(ntohs(uh->sport), 10).trimmed();
@@ -260,22 +261,26 @@ void ParseThread::run()
             qDebug() << "payloadType:" << payloadType;
             qDebug() << "ssrc:" << ssrc;
 */
-            foreach (const QStringList& tmpSL, parseResult) {
-
+            QString tempHashKey = QString("%1;%2;%3;%4;%5").arg(sourceIp).arg(srcPort).arg(destIp).arg(destPort).arg(ssrc);
+            if (parseResultDict.contains(tempHashKey)){
+                parseResult[*parseResultDict[tempHashKey]][COL_last_packet_time] = pktDateTime;
+                ++*(parseResultDict[tempHashKey] + 1);
             }
+            else {
+                QStringList tmpSL;
+                tmpSL << sourceIp << srcPort << destIp << destPort << pktDateTime << pktDateTime << "" << payloadType << ssrc << "" << "" << "" << "" << "";
+                parseResult.append(tmpSL);
+
+                int tepIntArray[2]{parseResult.size() - 1, 0};
+                parseResultDict.insert(tempHashKey, tepIntArray);
+            }
+
         }
     }
 
-    }
+    qDebug() << parseResult;
 
-    QList<QStringList> fakeList;
-    for(int i = 0; i < 14; ++i){
-        QStringList fakeString;
-        for(int j = 0; j < 14; ++j)
-            fakeString << QString("fake%1%2").arg(i).arg(j);
-        fakeList.append(fakeString);
-    }
-    emit parseSuccess(fakeList);
+    emit parseSuccess(parseResult);
 }
 
 void ParseThread::stopMe()
