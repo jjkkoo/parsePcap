@@ -199,7 +199,7 @@ void MainWindow::startParsing(const QString filePath)
 {
     m_pProgressBar->show();
     parseThread = new ParseThread(filePath, this);
-    connect(parseThread, &ParseThread::resultReady, this, &MainWindow::refreshProgress);
+    connect(parseThread, &ParseThread::updateProgress, this, &MainWindow::refreshProgress);
     connect(parseThread, &ParseThread::parseSuccess, this, &MainWindow::parseFinished);
     connect(parseThread, &ParseThread::finished, this, &MainWindow::parseThrOver);
     parseThread->start();

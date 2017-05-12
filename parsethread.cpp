@@ -28,6 +28,7 @@ typedef struct ip_header{
     u_int   op_pad;         // Option + Padding
 }ip_header;
 
+/* IPv6 header */
 typedef struct ipv6_header {
     u_char ver_tf;
     u_char traffic;
@@ -39,7 +40,6 @@ typedef struct ipv6_header {
     u_char Destv6[16];
 }ipv6_header;
 
-
 /* UDP header*/
 typedef struct udp_header{
     u_short sport;          // Source port
@@ -47,6 +47,27 @@ typedef struct udp_header{
     u_short len;            // Datagram length
     u_short crc;            // Checksum
 }udp_header;
+
+/* RTP header*/
+typedef struct rtp_header{
+    u_char cc:4;
+    u_char x:1;
+    u_char p:1;
+    u_char v:2;
+
+    u_char pt:7;
+    u_char m:1;
+
+    u_short sequence_number;
+    u_int timestamp;
+    u_int ssrc;
+}rtp_header;
+
+/* rtp extension header */
+typedef struct rtp_ext_header{
+    u_short profile;
+    u_short length;
+}rtp_ext_header;
 
 ParseThread::ParseThread(QString jobFile, QObject *parent) : QThread(parent), pcapFileName(jobFile), packetCount(0)
     ,m_parseResult(new QList<QStringList>())
@@ -172,65 +193,74 @@ void ParseThread::run()
         return;
     }
 
-    struct tm ltime;
-    char timestr[16];
     ip_header *ih;
     udp_header *uh;
+    rtp_header *rh;
+    rtp_ext_header *reh;
     u_int ip_len;
-    u_short sport,dport;
-    time_t local_tv_sec;
+    u_int rtp_len;
+    int rtp_ext_len;
+    //u_short sport,dport;
+    //time_t local_tv_sec;
 
     int currentPacketNo = 0;
     int currentProgress = 0;
     m_parseResult->clear();
     QString sourceIp, srcPort, destIp, destPort, payloadType, ssrc;
-    QSet<u_char> uniquePacketSet;
+    QDateTime tempDateTime;
+    QSet<QByteArray> uniquePacketSet;
+    QByteArray tempByteArray;
 
     while((res = pcap_next_ex( fp, &header, &pkt_data)) >= 0)
     {
         if (m_abort)    return;
 
         if (100 * ++currentPacketNo / packetCount > currentProgress) {
-            emit resultReady(++currentProgress);
-            printf("currentProgress: %d", currentProgress);
+            emit updateProgress(++currentProgress);
+            //printf("currentProgress: %d", currentProgress);
         }
 
-        /* convert the timestamp to readable format */
-        local_tv_sec = header->ts.tv_sec;
-        localtime_s(&ltime, &local_tv_sec);
-        strftime( timestr, sizeof timestr, "%H:%M:%S", &ltime);
-
-        /* print timestamp and length of the packet */
-        printf("%s.%.6d len:%d ", timestr, header->ts.tv_usec, header->len);
+        /* check duplicated packet */
+        tempByteArray = QByteArray((char *)pkt_data, header->len);
+        if (!uniquePacketSet.contains(tempByteArray)) {
+            uniquePacketSet.insert(tempByteArray);
 
         /* retireve the position of the ip header */
-        ih = (ip_header *) (pkt_data +
-            14); //length of ethernet header
+        ih = (ip_header *) (pkt_data + 14); //length of ethernet header
 
         /* retireve the position of the udp header */
         ip_len = (ih->ver_ihl & 0xf) * 4;
         uh = (udp_header *) ((u_char*)ih + ip_len);
 
-        /* convert from network byte order to host byte order */
-        sport = ntohs( uh->sport );
-        dport = ntohs( uh->dport );
-
-        /* print ip addresses and udp ports */
-        printf("%d.%d.%d.%d.%d -> %d.%d.%d.%d.%d\n",
-            ih->saddr.byte1,
-            ih->saddr.byte2,
-            ih->saddr.byte3,
-            ih->saddr.byte4,
-            sport,
-            ih->daddr.byte1,
-            ih->daddr.byte2,
-            ih->daddr.byte3,
-            ih->daddr.byte4,
-            dport);
-
-        if (!uniquePacketSet.contains(pkt_data)) {
-
+        /* assert rtp/amr packet, assuming smallest amr is 7 bytes */
+        if (uh->len >= 8 + sizeof(rtp_header) + 7) {
+            rh = (rtp_header *)((u_char*)uh + 8);
+            if (rh->x) {
+                reh = (rtp_ext_header *)((u_char*)rh + 12);
+                rtp_ext_len = 32 * reh->length;
+                rtp_len = 12 + 4 + rtp_ext_len + rh->cc * 32;
+            }
+            else {
+                rtp_len = 12 + rh->cc * 32;
+            }
+            tempDateTime = QDateTime::fromTime_t(header->ts.tv_sec);
+            sourceIp = QString("%1.%2.%3.%4").arg(ih->saddr.byte1).arg(ih->saddr.byte2).arg(ih->saddr.byte3).arg(ih->saddr.byte4);
+            destIp = QString("%1.%2.%3.%4").arg(ih->daddr.byte1).arg(ih->daddr.byte2).arg(ih->daddr.byte3).arg(ih->daddr.byte4);
+            srcPort = QString("%1").arg(ntohs(uh->sport), 10).trimmed();
+            destPort = QString("%1").arg(ntohs(uh->dport), 10).trimmed();
+            payloadType = QString("%1").arg(rh->pt);
+            ssrc = QString::number(ntohl(rh->ssrc), 16).trimmed().toUpper();
+/*
+            qDebug() << "pktTime:" << tempDateTime.toString("yyyy-MM-dd hh:mm:ss") + "." + QString::number(header->ts.tv_usec, 10);
+            qDebug() << "sourceIp:" << sourceIp;
+            qDebug() << "destIp:" << destIp;
+            qDebug() << "srcPort:" << srcPort;
+            qDebug() << "destPort:" << destPort;
+            qDebug() << "payloadType:" << payloadType;
+            qDebug() << "ssrc:" << ssrc;
+*/
         }
+    }
 
     }
 

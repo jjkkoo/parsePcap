@@ -40,7 +40,7 @@ public:
     ~ParseThread();
 
 signals:
-    void resultReady(int value);
+    void updateProgress(int value);
     void parseSuccess(QList<QStringList> parseResult);
 
 public slots:
