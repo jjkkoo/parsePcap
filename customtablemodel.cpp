@@ -110,11 +110,21 @@ bool CustomTableModel::removeRows(int position, int rows, const QModelIndex &par
     return true;
 }
 */
+
 bool CustomTableModel::appendData(QList<QStringList> data)
 {
     beginInsertRows(QModelIndex(), rowCount(), rowCount()+data.size()-1);
     m_data.append(data);
     endInsertRows();
+
+    return true;
+}
+
+bool CustomTableModel::clearData()
+{
+    beginRemoveRows(QModelIndex(), 0, rowCount() - 1);
+    m_data.clear();
+    endRemoveRows();
 
     return true;
 }

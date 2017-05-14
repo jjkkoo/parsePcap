@@ -151,7 +151,7 @@ void MainWindow::refreshProgress(int value)
     m_pProgressBar->setValue(value);
 }
 
-void MainWindow::parseFinished(QList<QStringList> parsedList)
+void MainWindow::parseFinished(QList<QStringList> parsedList, QStringList fileNameList)
 {
     int beforeAppendRowCount = tableModel->rowCount();
     tableModel->appendData(parsedList);
@@ -160,6 +160,8 @@ void MainWindow::parseFinished(QList<QStringList> parsedList)
         tableView->openPersistentEditor( tableModel->index(i, COL_codec) );
     }
     tableView->resizeColumnsToContents();
+
+    qDebug() << fileNameList;
 }
 
 void MainWindow::parseThrOver()
@@ -222,9 +224,10 @@ void MainWindow::pickFile()
     }
 }
 
-void MainWindow::clearFile()
+void MainWindow::clearTable()
 {
     qDebug() << "clearFile action";
+    tableModel->clearData();
 }
 
 void MainWindow::exit()
@@ -278,7 +281,7 @@ void MainWindow::createActions()
     clearAct = new QAction(tr("&Clear"), this);
     clearAct->setShortcut(tr("F8"));
     clearAct->setStatusTip(tr("Clear"));
-    connect(clearAct, &QAction::triggered, this, &MainWindow::clearFile);
+    connect(clearAct, &QAction::triggered, this, &MainWindow::clearTable);
 
     exitAct = new QAction(tr("&Exit"), this);
     exitAct->setShortcuts(QKeySequence::Quit);

@@ -52,7 +52,7 @@ protected:
 
 private slots:
     void pickFile();
-    void clearFile();
+    void clearTable();
     void exit();
     void plot();
     void exportMedia();
@@ -60,7 +60,7 @@ private slots:
     void stop();
     //void mark();
     void refreshProgress(int value);
-    void parseFinished(QList<QStringList> parsedList);
+    void parseFinished(QList<QStringList> parsedList, QStringList fileNameList);
     void parseThrOver();
     void cancelAll();
     void copySelection();
@@ -79,6 +79,7 @@ private:
     QMenu *playMenu;
     QMenu *modesMenu;
     QMenu *helpMenu;
+
     QAction *pickAct;
     QAction *clearAct;
     QAction *exitAct;
@@ -87,6 +88,7 @@ private:
     QAction *playAct;
     QAction *stopAct;
     //QAction *markAct;
+
     QTableView *tableView;
     CustomTableModel *tableModel;
     QChartView *chartView;
@@ -94,6 +96,7 @@ private:
     QProgressBar *m_pProgressBar;
     ParseThread *parseThread;
     //QList <ParseThread> *parseThreadList;
+
     QStringList *parseJobList;
     QString pickDir;
     QString saveDir;

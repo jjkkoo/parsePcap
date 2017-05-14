@@ -29,6 +29,7 @@ enum Columns
 class CustomTableModel : public QAbstractTableModel
 {
     Q_OBJECT
+
 public:
     explicit CustomTableModel(QObject *parent = 0);
 
@@ -41,6 +42,7 @@ public:
 //    bool insertRows(int position, int rows, const QModelIndex &parent);
 //    bool removeRows(int position, int rows, const QModelIndex &parent);
     bool appendData(QList<QStringList> data);
+    bool clearData();
 
 private:
     int m_columnCount;
