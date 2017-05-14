@@ -4,7 +4,8 @@
 
 int main(int argc, char *argv[])
 {
-    qRegisterMetaType< QList<QStringList> >();
+    qRegisterMetaType< QList<QStringList> >("parseResult");
+    qRegisterMetaType< QList<QTemporaryFile *> > ("mediaFileList");
 
     QApplication a(argc, argv);
     MainWindow w;

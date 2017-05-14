@@ -261,15 +261,17 @@ void ParseThread::run()
             }
         }
     }
-    QString mediaFileNameList[parseResultDict.size()];
-    foreach (parseResultInfo tmppri ,parseResultDict){
+
+    QTemporaryFile * mediaFileList[parseResultDict.size()];
+    foreach (const parseResultInfo &tmppri ,parseResultDict){
         parseResult[tmppri.position][COL_pktCount] = QString("%1").arg(tmppri.pktCount);
-        mediaFileNameList[tmppri.position] = tmppri.mediaFile->fileName();
+        mediaFileList[tmppri.position] = tmppri.mediaFile;
+        mediaFileList[tmppri.position]->close();
     }
 
-    QStringList mediaList;
+    QList<QTemporaryFile *> mediaList;
     for (int i = 0; i < parseResultDict.size(); ++i){
-        mediaList << mediaFileNameList[i];
+        mediaList << mediaFileList[i];
     }
     emit parseSuccess(parseResult, mediaList);
 

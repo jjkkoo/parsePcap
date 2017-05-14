@@ -128,7 +128,7 @@ public:
 
 signals:
     void updateProgress(int value);
-    void parseSuccess(QList<QStringList> parseResult, QStringList fileNameList);
+    void parseSuccess(QList<QStringList> parseResult, QList<QTemporaryFile *> fileNameList);// QStringList fileNameList);
 
 public slots:
     void stopMe();

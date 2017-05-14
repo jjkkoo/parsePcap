@@ -21,7 +21,7 @@ public:
     //void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
 
 private:
-    const QStringList items = {"item1", "item2", "item3"};
+    const QStringList items {"amr", "amr-wb", "amr_octet-align", "amr-wb_octet-align", "h264", "DTMF", "EVS"};
 
 };
 #endif

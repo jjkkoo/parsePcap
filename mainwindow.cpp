@@ -144,6 +144,10 @@ void MainWindow::closeEvent(QCloseEvent *event)
                 break;
         }
     }
+
+    foreach (const QTemporaryFile * fPtr, m_tempMediaFile) {
+        delete fPtr;
+    }
 }
 
 void MainWindow::refreshProgress(int value)
@@ -151,7 +155,7 @@ void MainWindow::refreshProgress(int value)
     m_pProgressBar->setValue(value);
 }
 
-void MainWindow::parseFinished(QList<QStringList> parsedList, QStringList fileNameList)
+void MainWindow::parseFinished(QList<QStringList> parsedList,  QList<QTemporaryFile *> fileNameList)//QStringList fileNameList)
 {
     int beforeAppendRowCount = tableModel->rowCount();
     tableModel->appendData(parsedList);
@@ -161,7 +165,7 @@ void MainWindow::parseFinished(QList<QStringList> parsedList, QStringList fileNa
     }
     tableView->resizeColumnsToContents();
 
-    qDebug() << fileNameList;
+    m_tempMediaFile.append(fileNameList);
 }
 
 void MainWindow::parseThrOver()

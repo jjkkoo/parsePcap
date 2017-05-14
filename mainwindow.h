@@ -60,7 +60,7 @@ private slots:
     void stop();
     //void mark();
     void refreshProgress(int value);
-    void parseFinished(QList<QStringList> parsedList, QStringList fileNameList);
+    void parseFinished(QList<QStringList> parsedList, QList<QTemporaryFile *> fileNameList);//QStringList fileNameList);
     void parseThrOver();
     void cancelAll();
     void copySelection();
@@ -100,6 +100,7 @@ private:
     QStringList *parseJobList;
     QString pickDir;
     QString saveDir;
+    QList<QTemporaryFile *> m_tempMediaFile;
 };
 
 #endif
