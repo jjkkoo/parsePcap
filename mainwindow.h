@@ -95,6 +95,7 @@ private:
     QTableView *tableView;
     CustomTableModel *tableModel;
     ChartView *chartView;
+    Chart *chart;
     QLineSeries *series;
     QProgressBar *m_pProgressBar;
     ParseThread *parseThread;

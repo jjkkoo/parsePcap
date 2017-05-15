@@ -19,38 +19,26 @@ MainWindow::MainWindow()
     ComboBoxDelegate* delegate = new ComboBoxDelegate;
     tableView->setItemDelegateForColumn(COL_codec, delegate);
 
-    Chart *chart = new Chart;
+    chart = new Chart;
     chart->setAnimationOptions(Chart::AllAnimations);
 
     series = new QLineSeries;
-    series->setName("Line 1");
-
-    QVector<QPointF> points;
-    for (int k = 0; k < 2000; k++)
-        points.append(QPointF(k, k));
-
-    series->replace(points);
-    /*
-    QVXYModelMapper *mapper = new QVXYModelMapper(this);
-    mapper->setXColumn(0);
-    mapper->setYColumn(1);
-    mapper->setSeries(series);
-    mapper->setModel(model);
-    */
-    QValueAxis *axisX = new QValueAxis;
-    //axisX->setRange(0, 2000);
-    axisX->setLabelFormat("%g");
-    axisX->setTitleText("Reference Time");
-    QValueAxis *axisY = new QValueAxis;
-    //axisY->setRange(-1, 1);
-    axisY->setTitleText("Audio level");
-    chart->setAxisX(axisX, series);
-    chart->setAxisY(axisY, series);
-    chart->legend()->hide();
-    chart->setTitle("Time Domain Plotting");
 
     chart->addSeries(series);
     chart->createDefaultAxes();
+
+    QValueAxis *axisX = new QValueAxis;
+    //axisX->setRange(0, 2000);
+    axisX->setLabelFormat("%.3f");
+    axisX->setTitleText("Reference Time");
+    QValueAxis *axisY = new QValueAxis;
+    axisY->setRange(-32768, 32768);
+    axisY->setTitleText("Audio level");
+    chart->setAxisX(axisX, series);
+    chart->setAxisY(axisY, series);
+    //chart->legend()->hide();
+    chart->setTitle("Time Domain Plotting");
+
     chartView = new ChartView(chart);
 
     QSplitter *splitter = new QSplitter(Qt::Vertical);
@@ -260,9 +248,26 @@ void MainWindow::plot()
     }
     QList<int> indexList = indexRowSet.toList();
     qSort(indexList.begin(), indexList.end());
-    qDebug() << "index:" << indexList[0] << "codec:" << tableModel->index(indexList[0], COL_codec).data().toInt();
+    qDebug() << "index:" << indexList[0] << "codec:" << tableModel->index(indexList[0], COL_codec).data().toInt() << m_tempMediaFile.at(indexList[0])->fileName();
 
+    QFile mediaDataFile(m_tempMediaFile.at(indexList[0])->fileName());
+    if(!mediaDataFile.open(QIODevice::ReadOnly)) {
+        statusBar()->showMessage("error reading cache files!");
+        return;
+    }
+    chart->axisX(series)->setRange(0, mediaDataFile.size()/2*0.05 );
+    QVector<QPointF> points;
+    char shortData[2];
+    for (int k = 0; k < mediaDataFile.size() / 2; ++k) {
+        mediaDataFile.read(shortData, 2);
+        points.append( QPointF(k * 0.05, *(short *)shortData ));
+    }
+   // qDebug() << points;
+    series->replace(points);
+    series->setName(QString("index:%1_%2_%3_%4_%5").arg(indexList[0] + 1).arg(tableModel->index(indexList[0], COL_source_ip).data().toString()).arg(tableModel->index(indexList[0], COL_srcPort).data().toString())
+            .arg(tableModel->index(indexList[0], COL_dest_ip).data().toString()).arg(tableModel->index(indexList[0], COL_destPort).data().toString()));
     chartView->show();
+    mediaDataFile.close();
 }
 
 void MainWindow::exportMedia()
