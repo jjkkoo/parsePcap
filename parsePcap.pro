@@ -22,14 +22,16 @@ CONFIG += c++11
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    customchartmodel.cpp \
     customtablemodel.cpp \
     parsethread.cpp \
-    comboboxdelegate.cpp
+    comboboxdelegate.cpp \
+    customchart.cpp \
+    chartview.cpp
 
 HEADERS  += mainwindow.h \
-    customchartmodel.h \
     customtablemodel.h \
     parsethread.h \
-    comboboxdelegate.h
+    comboboxdelegate.h \
+    customchart.h \
+    chartview.h
 

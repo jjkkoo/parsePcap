@@ -20,18 +20,20 @@ class QStringList;
 QT_END_NAMESPACE
 
 
-#include <QtCharts/QChart>
-#include <QtCharts/QChartView>
+//#include <QtCharts/QChart>
+//#include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
-#include <QtCharts/QVXYModelMapper>
-#include <QtWidgets/QHeaderView>
 #include <QtCharts/QValueAxis>
-#include "customchartmodel.h"
+//#include <QtCharts/QVXYModelMapper>
+#include <QtWidgets/QHeaderView>
+
+#include "customchart.h"
+#include "chartview.h"
 #include "customtablemodel.h"
 #include "parsethread.h"
 #include "comboboxdelegate.h"
 
-QT_CHARTS_USE_NAMESPACE
+//QT_CHARTS_USE_NAMESPACE
 
 
 class MainWindow : public QMainWindow
@@ -61,6 +63,7 @@ private slots:
     //void mark();
     void refreshProgress(int value);
     void parseFinished(QList<QStringList> parsedList, QList<QTemporaryFile *> fileNameList);//QStringList fileNameList);
+    void lastWords(const QString & laswords);
     void parseThrOver();
     void cancelAll();
     void copySelection();
@@ -91,7 +94,7 @@ private:
 
     QTableView *tableView;
     CustomTableModel *tableModel;
-    QChartView *chartView;
+    ChartView *chartView;
     QLineSeries *series;
     QProgressBar *m_pProgressBar;
     ParseThread *parseThread;

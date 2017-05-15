@@ -19,8 +19,8 @@ MainWindow::MainWindow()
     ComboBoxDelegate* delegate = new ComboBoxDelegate;
     tableView->setItemDelegateForColumn(COL_codec, delegate);
 
-    QChart *chart = new QChart;
-    chart->setAnimationOptions(QChart::AllAnimations);
+    Chart *chart = new Chart;
+    chart->setAnimationOptions(Chart::AllAnimations);
 
     series = new QLineSeries;
     series->setName("Line 1");
@@ -51,7 +51,7 @@ MainWindow::MainWindow()
 
     chart->addSeries(series);
     chart->createDefaultAxes();
-    chartView = new QChartView(chart);
+    chartView = new ChartView(chart);
 
     QSplitter *splitter = new QSplitter(Qt::Vertical);
     splitter->addWidget(tableView);
@@ -145,9 +145,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
         }
     }
 
-    foreach (const QTemporaryFile * fPtr, m_tempMediaFile) {
+    foreach (const QTemporaryFile * fPtr, m_tempMediaFile)
         delete fPtr;
-    }
+    m_tempMediaFile.clear();
 }
 
 void MainWindow::refreshProgress(int value)
@@ -166,6 +166,10 @@ void MainWindow::parseFinished(QList<QStringList> parsedList,  QList<QTemporaryF
     tableView->resizeColumnsToContents();
 
     m_tempMediaFile.append(fileNameList);
+}
+
+void MainWindow::lastWords(const QString &laswords) {
+    statusBar()->showMessage(laswords);
 }
 
 void MainWindow::parseThrOver()
@@ -207,6 +211,7 @@ void MainWindow::startParsing(const QString filePath)
     parseThread = new ParseThread(filePath, this);
     connect(parseThread, &ParseThread::updateProgress, this, &MainWindow::refreshProgress);
     connect(parseThread, &ParseThread::parseSuccess, this, &MainWindow::parseFinished);
+    connect(parseThread, &ParseThread::lastWords, this, &MainWindow::lastWords);
     connect(parseThread, &ParseThread::finished, this, &MainWindow::parseThrOver);
     parseThread->start();
 }
@@ -232,6 +237,10 @@ void MainWindow::clearTable()
 {
     qDebug() << "clearFile action";
     tableModel->clearData();
+
+    foreach (const QTemporaryFile * fPtr, m_tempMediaFile)
+        delete fPtr;
+    m_tempMediaFile.clear();
 }
 
 void MainWindow::exit()
@@ -245,13 +254,15 @@ void MainWindow::plot()
     qDebug() << "plot action";
     QItemSelectionModel * selection = tableView->selectionModel();
     QModelIndexList indexes = selection->selectedIndexes();
-    QSet<int> indexSet;
+    QSet<int> indexRowSet;
     foreach(const QModelIndex& index, indexes){
-        indexSet.insert(index.row());
+        indexRowSet.insert(index.row());
     }
-    QList<int> indexList = indexSet.toList();
+    QList<int> indexList = indexRowSet.toList();
     qSort(indexList.begin(), indexList.end());
-    qDebug() << indexList;
+    qDebug() << "index:" << indexList[0] << "codec:" << tableModel->index(indexList[0], COL_codec).data().toInt();
+
+    chartView->show();
 }
 
 void MainWindow::exportMedia()

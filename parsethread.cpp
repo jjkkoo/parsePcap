@@ -2,9 +2,10 @@
 
 //#define LINE_LEN 16
 const char packet_filter[] = "ip and udp || ip6 and udp";
+const QString parseWasSuccess("parsing seems okay");
+QString parseError;
 struct bpf_program fcode;
 u_int netmask = 0xffffff;
-
 
 int getIpv6Addr(char *output, int *output_len, u_char *input) {
     int j = 0, ret = 0 ;
@@ -274,7 +275,7 @@ void ParseThread::run()
         mediaList << mediaFileList[i];
     }
     emit parseSuccess(parseResult, mediaList);
-
+    emit lastWords(parseWasSuccess);
     pcap_close (fp);
 }
 

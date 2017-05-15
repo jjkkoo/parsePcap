@@ -129,6 +129,7 @@ public:
 signals:
     void updateProgress(int value);
     void parseSuccess(QList<QStringList> parseResult, QList<QTemporaryFile *> fileNameList);// QStringList fileNameList);
+    void lastWords(const QString & lastWords);
 
 public slots:
     void stopMe();

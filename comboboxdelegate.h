@@ -4,6 +4,20 @@
 #include <QStringList>
 #include <QItemDelegate>
 
+#ifndef COLUMNS_H
+#define COLUMNS_H
+enum codecColumns
+{
+    COL_amr,
+    COL_amr_wb,
+    COL_amr_octet_align,
+    COL_amr_wb_octet_align,
+    COL_h264,
+    COL_DTMF,
+    COL_EVS
+};
+#endif
+
 class QModelIndex;
 class QWidget;
 class QVariant;

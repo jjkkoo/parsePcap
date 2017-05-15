@@ -7,7 +7,7 @@
 
 #ifndef COLUMNS_H
 #define COLUMNS_H
-enum Columns
+enum tableColumns
 {
     COL_source_ip,
     COL_srcPort,
