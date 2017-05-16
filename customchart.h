@@ -25,7 +25,7 @@ private:
     bool gestureEvent(QGestureEvent *event);
 
 private:
-
+    QList<int> m_dataLength;
 };
 
 #endif // CHART_H

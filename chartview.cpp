@@ -3,10 +3,17 @@
 #include <QtGui/QMouseEvent>
 
 ChartView::ChartView(QChart *chart, QWidget *parent) :
-    QChartView(chart, parent),
-    m_isTouching(false)
+    QChartView(chart, parent), m_isTouching(false), m_dataLength{0}
 {
     setRubberBand(QChartView::RectangleRubberBand);
+}
+
+void ChartView::setDataLength(int dataLen) {
+    m_dataLength[0] = dataLen;
+}
+
+int ChartView::getDataLength(int index){
+    return m_dataLength.at(index);
 }
 
 bool ChartView::viewportEvent(QEvent *event)
@@ -25,8 +32,22 @@ bool ChartView::viewportEvent(QEvent *event)
     return QChartView::viewportEvent(event);
 }
 
+void ChartView::wheelEvent(QWheelEvent *event)
+{
+    //QPoint numPixels = event->pixelDelta();
+    QPoint numDegrees = event->angleDelta() / 8;
+    for(int i = 0; i < qAbs(numDegrees.y()/15); ++i) {
+        setDataLength(m_dataLength.at(0) * (numDegrees.y() > 0 ? 2 : 0.5));
+        chart()->axisX()->setRange(0,  QVariant(m_dataLength.at(0)));
+    }
+    event->accept();
+}
+
 void ChartView::mousePressEvent(QMouseEvent *event)
 {
+    qDebug() << chart()->plotArea();
+    qDebug() << event->x() << ":" << event->y() << ":" << event->globalX() << ":" << event->globalY();
+
     if (m_isTouching)
         return;
     QChartView::mousePressEvent(event);
@@ -51,7 +72,6 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event)
     QChartView::mouseReleaseEvent(event);
 }
 
-//![1]
 void ChartView::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key()) {
@@ -61,7 +81,6 @@ void ChartView::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Minus:
         chart()->zoomOut();
         break;
-//![1]
     case Qt::Key_Left:
         chart()->scroll(-10, 0);
         break;

@@ -33,11 +33,13 @@ MainWindow::MainWindow()
     axisX->setTitleText("Reference Time");
     QValueAxis *axisY = new QValueAxis;
     axisY->setRange(-32768, 32768);
+    axisY->setLabelFormat("%d");
     axisY->setTitleText("Audio level");
     chart->setAxisX(axisX, series);
     chart->setAxisY(axisY, series);
     //chart->legend()->hide();
     chart->setTitle("Time Domain Plotting");
+    chart->setTheme(QChart::ChartThemeLight);
 
     chartView = new ChartView(chart);
 
@@ -255,7 +257,10 @@ void MainWindow::plot()
         statusBar()->showMessage("error reading cache files!");
         return;
     }
+
     chart->axisX(series)->setRange(0, mediaDataFile.size()/2*0.05 );
+    chartView->setDataLength(mediaDataFile.size()/2*0.05);
+
     QVector<QPointF> points;
     char shortData[2];
     for (int k = 0; k < mediaDataFile.size() / 2; ++k) {
@@ -266,6 +271,8 @@ void MainWindow::plot()
     series->replace(points);
     series->setName(QString("index:%1_%2_%3_%4_%5").arg(indexList[0] + 1).arg(tableModel->index(indexList[0], COL_source_ip).data().toString()).arg(tableModel->index(indexList[0], COL_srcPort).data().toString())
             .arg(tableModel->index(indexList[0], COL_dest_ip).data().toString()).arg(tableModel->index(indexList[0], COL_destPort).data().toString()));
+//    QPen pen(QRgb(0x000000));
+//    series->setPen(pen);
     chartView->show();
     mediaDataFile.close();
 }
