@@ -10,9 +10,9 @@ QT_END_NAMESPACE
 
 QT_CHARTS_USE_NAMESPACE
 
-//![1]
+
 class Chart : public QChart
-//![1]
+
 {
 public:
     explicit Chart(QGraphicsItem *parent = 0, Qt::WindowFlags wFlags = 0);

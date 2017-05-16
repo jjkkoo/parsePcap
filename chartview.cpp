@@ -3,10 +3,19 @@
 #include <QtGui/QMouseEvent>
 
 ChartView::ChartView(QChart *chart, QWidget *parent) :
-    QChartView(chart, parent), m_isTouching(false), m_dataLength{0}
+    QChartView(chart, parent), m_isTouching(false), m_dataLength{0}, zoomInfoList{{0,0,0}}
 {
     setRubberBand(QChartView::RectangleRubberBand);
 }
+
+void ChartView::setZoomInfo(zoomInfo zi) {
+    zoomInfoList[0] = zi;
+}
+
+zoomInfo ChartView::getZoomInfo(int index) {
+    return zoomInfoList.at(index);
+}
+
 
 void ChartView::setDataLength(int dataLen) {
     m_dataLength[0] = dataLen;
@@ -36,10 +45,46 @@ void ChartView::wheelEvent(QWheelEvent *event)
 {
     //QPoint numPixels = event->pixelDelta();
     QPoint numDegrees = event->angleDelta() / 8;
-    for(int i = 0; i < qAbs(numDegrees.y()/15); ++i) {
-        setDataLength(m_dataLength.at(0) * (numDegrees.y() > 0 ? 2 : 0.5));
-        chart()->axisX()->setRange(0,  QVariant(m_dataLength.at(0)));
+
+    setDataLength(m_dataLength.at(0) * (numDegrees.y() > 0 ? 2 : 0.5));
+
+    if (numDegrees.y() > 0) {
+        if (zoomInfoList.at(0).step > 1) {
+            zoomInfoList[0].step = zoomInfoList[0].step / 2;
+            if(event->x() <= chart()->plotArea().width() / 2)
+                zoomInfoList[0].end = zoomInfoList[0].start + zoomInfoList.at(0).step;
+            else
+                zoomInfoList[0].start = zoomInfoList[0].start + zoomInfoList.at(0).step;
+            chart()->axisX()->setRange(QVariant(zoomInfoList.at(0).start), QVariant(zoomInfoList.at(0).end));
+        }
     }
+    else {
+        if (zoomInfoList.at(0).step < zoomInfoList.at(0).max) {
+            zoomInfoList[0].step = (zoomInfoList.at(0).step * 2 > zoomInfoList.at(0).max ? zoomInfoList.at(0).max : zoomInfoList[0].step * 2);
+            if(zoomInfoList[0].start / zoomInfoList[0].step % 2 == 0) {
+                if(zoomInfoList.at(0).max < zoomInfoList.at(0).start + zoomInfoList.at(0).step) {
+                    zoomInfoList[0].end = zoomInfoList.at(0).max;
+                    zoomInfoList[0].start = 0;
+                }
+                else
+                    zoomInfoList[0].end = zoomInfoList[0].start + zoomInfoList.at(0).step;
+            }
+            else {
+                if(zoomInfoList.at(0).start - zoomInfoList.at(0).step < 0) {
+                    zoomInfoList[0].end = zoomInfoList.at(0).max;
+                    zoomInfoList[0].start = 0;
+                }
+                else {
+                    if (zoomInfoList.at(0).end > zoomInfoList.at(0).start + zoomInfoList.at(0).step)
+                        zoomInfoList[0].start = zoomInfoList[0].start + zoomInfoList.at(0).step;
+                    else
+                        zoomInfoList[0].end = zoomInfoList[0].end + zoomInfoList.at(0).step;
+                }
+            }
+            chart()->axisX()->setRange(QVariant(zoomInfoList.at(0).start), QVariant(zoomInfoList.at(0).end));
+        }
+    }
+    qDebug() << zoomInfoList.at(0).start << ";" << zoomInfoList.at(0).end << ";" << zoomInfoList.at(0).step << ";" << zoomInfoList.at(0).max;
     event->accept();
 }
 

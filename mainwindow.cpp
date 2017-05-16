@@ -259,7 +259,8 @@ void MainWindow::plot()
     }
 
     chart->axisX(series)->setRange(0, mediaDataFile.size()/2*0.05 );
-    chartView->setDataLength(mediaDataFile.size()/2*0.05);
+    zoomInfo zi{0, mediaDataFile.size()/2*0.05, mediaDataFile.size()/2*0.05, mediaDataFile.size()/2*0.05};
+    chartView->setZoomInfo(zi);
 
     QVector<QPointF> points;
     char shortData[2];

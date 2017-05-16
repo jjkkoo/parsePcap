@@ -9,16 +9,24 @@
 
 QT_CHARTS_USE_NAMESPACE
 
-//![1]
+
+typedef struct zoomInfo {
+    int start;
+    int end;
+    int step;
+    int max;
+}zoomInfo;
+
 class ChartView : public QChartView
-//![1]
 {
 public:
     ChartView(QChart *chart, QWidget *parent = 0);
     void setDataLength(int dataLen);
     int getDataLength(int index);
+    void setZoomInfo(zoomInfo zi);
+    zoomInfo getZoomInfo(int index);
 
-//![2]
+
 protected:
     void wheelEvent(QWheelEvent *event);
     bool viewportEvent(QEvent *event);
@@ -26,11 +34,12 @@ protected:
     void mouseMoveEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *event);
-//![2]
+
 
 private:
     bool m_isTouching;
     QList<int> m_dataLength;
+    QList<zoomInfo> zoomInfoList;
 };
 
 #endif

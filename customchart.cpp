@@ -18,7 +18,6 @@ Chart::~Chart()
 
 }
 
-//![1]
 bool Chart::sceneEvent(QEvent *event)
 {
     if (event->type() == QEvent::Gesture)
@@ -41,4 +40,3 @@ bool Chart::gestureEvent(QGestureEvent *event)
 
     return true;
 }
-//![1]
