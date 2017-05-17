@@ -21,8 +21,8 @@ class ChartView : public QChartView
 {
 public:
     ChartView(QChart *chart, QWidget *parent = 0);
-    void setDataLength(int dataLen);
-    int getDataLength(int index);
+//    void setDataLength(int dataLen);
+//    int getDataLength(int index);
     void setZoomInfo(zoomInfo zi);
     zoomInfo getZoomInfo(int index);
 

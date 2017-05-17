@@ -114,6 +114,10 @@ void ParseThread::run()
     qDebug() << "packetCount:" << packetCount;
 
     pcap_close (fp);
+    if (packetCount<=0) {
+        emit lastWords("parse failed, 0 packet available!");
+        return;
+    }
 
     /* Open the capture file */
     if ( (fp= pcap_open(source,         // name of the device

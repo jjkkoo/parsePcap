@@ -17,13 +17,13 @@ zoomInfo ChartView::getZoomInfo(int index) {
 }
 
 
-void ChartView::setDataLength(int dataLen) {
-    m_dataLength[0] = dataLen;
-}
+//void ChartView::setDataLength(int dataLen) {
+//    m_dataLength[0] = dataLen;
+//}
 
-int ChartView::getDataLength(int index){
-    return m_dataLength.at(index);
-}
+//int ChartView::getDataLength(int index){
+//    return m_dataLength.at(index);
+//}
 
 bool ChartView::viewportEvent(QEvent *event)
 {
@@ -45,32 +45,30 @@ void ChartView::wheelEvent(QWheelEvent *event)
 {
     //QPoint numPixels = event->pixelDelta();
     QPoint numDegrees = event->angleDelta() / 8;
-
-    setDataLength(m_dataLength.at(0) * (numDegrees.y() > 0 ? 2 : 0.5));
-
-    if (numDegrees.y() > 0) {
-        if (zoomInfoList.at(0).step > 1) {
-            zoomInfoList[0].step = zoomInfoList[0].step / 2;
-            if(event->x() <= chart()->plotArea().width() / 2)
+    if (numDegrees.y() > 0) {                                    //zoom in
+        if (zoomInfoList.at(0).step > 1) {                       //least step 1, suppose it is a int
+            zoomInfoList[0].step = zoomInfoList[0].step / 2;     //zoom in by 2
+            if(event->x() <= chart()->plotArea().width() / 2)    //show first half
                 zoomInfoList[0].end = zoomInfoList[0].start + zoomInfoList.at(0).step;
-            else
+            else                                                 //show second half
                 zoomInfoList[0].start = zoomInfoList[0].start + zoomInfoList.at(0).step;
             chart()->axisX()->setRange(QVariant(zoomInfoList.at(0).start), QVariant(zoomInfoList.at(0).end));
         }
     }
-    else {
-        if (zoomInfoList.at(0).step < zoomInfoList.at(0).max) {
-            zoomInfoList[0].step = (zoomInfoList.at(0).step * 2 > zoomInfoList.at(0).max ? zoomInfoList.at(0).max : zoomInfoList[0].step * 2);
-            if(zoomInfoList[0].start / zoomInfoList[0].step % 2 == 0) {
-                if(zoomInfoList.at(0).max < zoomInfoList.at(0).start + zoomInfoList.at(0).step) {
+    else {                                                       //zoom out
+        if (zoomInfoList.at(0).step < zoomInfoList.at(0).max) {  //make sure step less than max
+            zoomInfoList[0].step = (zoomInfoList.at(0).step * 2 > zoomInfoList.at(0).max ?    //if zoom result step larger than max then use max
+                                        zoomInfoList.at(0).max : zoomInfoList[0].step * 2);
+            if(zoomInfoList[0].start / zoomInfoList[0].step % 2 == 0) {    //calculate which half we are now
+                if(zoomInfoList.at(0).max < zoomInfoList.at(0).start + zoomInfoList.at(0).step) {   //overfilled
                     zoomInfoList[0].end = zoomInfoList.at(0).max;
                     zoomInfoList[0].start = 0;
                 }
                 else
-                    zoomInfoList[0].end = zoomInfoList[0].start + zoomInfoList.at(0).step;
+                    zoomInfoList[0].end = zoomInfoList[0].start + zoomInfoList.at(0).step;    //later half
             }
             else {
-                if(zoomInfoList.at(0).start - zoomInfoList.at(0).step < 0) {
+                if(zoomInfoList.at(0).start - zoomInfoList.at(0).step < 0) {    //start-step<0 reset
                     zoomInfoList[0].end = zoomInfoList.at(0).max;
                     zoomInfoList[0].start = 0;
                 }

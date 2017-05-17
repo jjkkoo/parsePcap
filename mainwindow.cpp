@@ -62,6 +62,11 @@ MainWindow::MainWindow()
 
     initUI();
     readSettings();
+
+    tableView->setAcceptDrops(false);
+    chartView->setAcceptDrops(false);
+    splitter->setAcceptDrops(false);
+    setAcceptDrops(true);
 }
 /*
 #ifndef QT_NO_CONTEXTMENU
@@ -375,3 +380,19 @@ void MainWindow::createMenus()
 
 }
 
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+    //if (event->mimeData()->hasFormat("text/plain"))
+    event->acceptProposedAction();
+}
+
+void MainWindow::dropEvent(QDropEvent *event)
+{
+    QList<QUrl> urls = event->mimeData()->urls();
+    if (urls.isEmpty()) {return;}
+
+    QString fileName = urls.first().toLocalFile();
+    qDebug() << fileName;
+    startParsing(fileName);
+
+}
