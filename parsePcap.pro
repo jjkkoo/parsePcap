@@ -6,16 +6,20 @@
 
 QT       += core gui
 QT       += charts
-QT       += multimedia
+#QT       += multimedia
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = parsePcap
 TEMPLATE = app
 
-INCLUDEPATH += c:\WpdPack\Include
-LIBS += c:\WpdPack\Lib\libwpcap.a
-LIBS += c:\WpdPack\Lib\libpacket.a
+INCLUDEPATH += $$PWD\WpdPack\Include
+INCLUDEPATH += $$PWD\amr_nb\include
+INCLUDEPATH += $$PWD\amr_wb\include
+LIBS += $$PWD\WpdPack\Lib\libwpcap.a
+LIBS += $$PWD\WpdPack\Lib\libpacket.a
+LIBS += $$PWD\amr_nb\lib\amr_nb32.a
+LIBS += $$PWD\amr_wb\lib\amr_wb32.a
 LIBS += libws2_32
 
 CONFIG += c++11
@@ -26,12 +30,14 @@ SOURCES += main.cpp\
     parsethread.cpp \
     comboboxdelegate.cpp \
     customchart.cpp \
-    chartview.cpp
+    chartview.cpp \
+    decodethread.cpp
 
 HEADERS  += mainwindow.h \
     customtablemodel.h \
     parsethread.h \
     comboboxdelegate.h \
     customchart.h \
-    chartview.h
+    chartview.h \
+    decodethread.h
 

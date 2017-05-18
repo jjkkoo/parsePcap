@@ -1,0 +1,20 @@
+ Volume in drive E is ÐÂ¼Ó¾í
+ Volume Serial Number is C040-C3C1
+
+ Directory of E:\c_project\parsePcap\amr_wb\include
+
+05/19/2017  01:42 AM    <DIR>          .
+05/19/2017  01:42 AM    <DIR>          ..
+05/19/2017  01:42 AM                 0 a.txt
+05/19/2017  12:39 AM               523 dec.h
+05/19/2017  12:39 AM               552 dec_acelp.h
+05/19/2017  12:39 AM             2,505 dec_dtx.h
+05/19/2017  12:39 AM             1,237 dec_gain.h
+05/19/2017  12:39 AM               615 dec_if.h
+05/19/2017  12:39 AM             1,068 dec_lpc.h
+05/19/2017  12:39 AM             3,289 dec_main.h
+05/19/2017  12:39 AM             1,414 dec_util.h
+05/19/2017  12:39 AM             1,872 if_rom.h
+05/19/2017  12:39 AM               503 typedef.h
+              11 File(s)         13,578 bytes
+               2 Dir(s)  647,206,920,192 bytes free
