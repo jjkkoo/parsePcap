@@ -31,6 +31,7 @@ QT_END_NAMESPACE
 #include "chartview.h"
 #include "customtablemodel.h"
 #include "parsethread.h"
+#include "decodethread.h"
 #include "comboboxdelegate.h"
 
 //QT_CHARTS_USE_NAMESPACE
@@ -65,8 +66,11 @@ private slots:
     //void mark();
     void refreshProgress(int value);
     void parseFinished(QList<QStringList> parsedList, QList<QTemporaryFile *> fileNameList);//QStringList fileNameList);
+    void decodeFinished(QTemporaryFile * decodeResult);
     void lastWords(const QString & laswords);
     void parseThrOver();
+    void decodeThrOver();
+    void plotOnChart(QList<int>indexList);
     void cancelAll();
     void copySelection();
 
@@ -78,6 +82,7 @@ private:
     void readSettings();
     void writeSettings();
     void startParsing(const QString filePath);
+    void startDecoding(int index);
 
     QMenu *fileMenu;
     QMenu *editMenu;
@@ -101,12 +106,16 @@ private:
     QLineSeries *series;
     QProgressBar *m_pProgressBar;
     ParseThread *parseThread;
+    DecodeThread *decodeThread;
     //QList <ParseThread> *parseThreadList;
 
     QStringList *parseJobList;
     QString pickDir;
     QString saveDir;
     QList<QTemporaryFile *> m_tempMediaFile;
+    QVector<QTemporaryFile *> m_tempDecodedFile;
+
+    QList<int> waitForPlotList;
 };
 
 #endif

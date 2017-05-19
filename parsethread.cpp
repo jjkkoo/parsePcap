@@ -168,7 +168,7 @@ void ParseThread::run()
     QByteArray tempByteArray;
     QList<QStringList> parseResult;// = new QList<QStringList>();
     QHash<QString, parseResultInfo> parseResultDict;
-    const char magicByte[] = {"\xb4\xc3\xb2\xa1"};
+    //const char magicByte[] = {"\xb4\xc3\xb2\xa1"};
     char sourceIpv6Buffer[40], destIpv6Buffer[40];
     int *sourceIPv6Len = 0,  *destIpv6len = 0;
     char ip_version;
@@ -245,7 +245,7 @@ void ParseThread::run()
                     ++parseResultDict[tempHashKey].pktCount;
 
                     int numWritten = parseResultDict[tempHashKey].mediaFile->write((char *)rh + rtp_len, header->len - dl_len - ip_len - 8 - rtp_len);
-                    parseResultDict[tempHashKey].mediaFile->write(magicByte);
+                    //parseResultDict[tempHashKey].mediaFile->write(magicByte);
                 }
                 else {
                     /* create new depository entry */
@@ -256,9 +256,9 @@ void ParseThread::run()
                     QTemporaryFile *tmpFile = new QTemporaryFile("parsePcap"); //todo free memory
                     if (tmpFile->open()){
 
-                        tmpFile->write(magicByte);
+                        //tmpFile->write(magicByte);
                         int numWritten = tmpFile->write((char *)rh + rtp_len, header->len - dl_len - ip_len - 8 - rtp_len);
-                        tmpFile->write(magicByte);
+                        //tmpFile->write(magicByte);
                     }
                     parseResultInfo *pri = new parseResultInfo {parseResult.size() - 1, 1, tmpFile};    //todo free memory
                     parseResultDict.insert(tempHashKey, *pri);

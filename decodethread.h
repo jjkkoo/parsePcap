@@ -1,6 +1,11 @@
-#ifndef DECODETHREAD_H
-#define DECODETHREAD_H
+#ifndef DecodeThread_H
+#define DecodeThread_H
 extern "C" {
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <memory.h>
+
 #include "interf_dec.h"
 #include "interf_rom.h"
 #include "rom_dec.h"
@@ -19,11 +24,49 @@ extern "C" {
 #include "typedef.h"
 }
 
+#include <QThread>
+#include <QDebug>
+#include <QMutex>
+#include <QTemporaryFile>
 
-class decodeThread
+#ifndef CODEC_H
+#define CODEC_H
+enum codecColumns
 {
+    COL_amr,
+    COL_amr_wb,
+    COL_amr_octet_align,
+    COL_amr_wb_octet_align,
+    COL_h264,
+    COL_DTMF,
+    COL_EVS
+};
+#endif
+
+class DecodeThread : public QThread
+{
+    Q_OBJECT
 public:
-    decodeThread();
+    explicit DecodeThread(const QString &decodeFile, int codec, QObject *parent = 0);
+    ~DecodeThread();
+
+signals:
+    void updateProgress(int value);
+    void decodeSuccess(QTemporaryFile * decodeResult);
+    void lastWords(const QString & lastWords);
+
+public slots:
+    void stopMe();
+
+protected:
+    virtual void run();
+
+private:
+    bool m_abort;
+    QMutex mutex;
+    const QString decodeFile;
+    int codec;
+    //QTemporaryFile * decodeResult;
 };
 
-#endif // DECODETHREAD_H
+#endif // DecodeThread_H

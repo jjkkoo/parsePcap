@@ -4,8 +4,8 @@
 #include <QStringList>
 #include <QItemDelegate>
 
-#ifndef COLUMNS_H
-#define COLUMNS_H
+#ifndef CODEC_H
+#define CODEC_H
 enum codecColumns
 {
     COL_amr,

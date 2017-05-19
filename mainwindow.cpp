@@ -59,6 +59,7 @@ MainWindow::MainWindow()
     //resize(798, 507);
 
     parseThread = nullptr;
+    decodeThread = nullptr;
 
     initUI();
     readSettings();
@@ -108,13 +109,13 @@ void MainWindow::readSettings()
     pickDir = settings.value("pickDirectory", QCoreApplication::applicationDirPath()).toString();
     saveDir = settings.value("saveDirectory", QCoreApplication::applicationDirPath()).toString();
     settings.endGroup();
-    qDebug() << QCoreApplication::applicationDirPath()<< "," << QDir::currentPath() << "," << QDir::current().path();
+    //qDebug() << QCoreApplication::applicationDirPath()<< "," << QDir::currentPath() << "," << QDir::current().path();
     qDebug() << pickDir;
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    if (parseThread == nullptr) {
+    if (parseThread == nullptr and decodeThread == nullptr) {
         qDebug() << "ready to exit";
         event->accept();
         //return;
@@ -130,7 +131,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
                 if (parseThread != nullptr and parseThread->isRunning()) {
                     parseThread->stopMe();
                 }
-                writeSettings();
+                else if (decodeThread != nullptr and decodeThread->isRunning()) {
+                    decodeThread->stopMe();
+                }
                 event->accept();
                 break;
             case QMessageBox::Cancel:
@@ -143,6 +146,12 @@ void MainWindow::closeEvent(QCloseEvent *event)
     foreach (const QTemporaryFile * fPtr, m_tempMediaFile)
         delete fPtr;
     m_tempMediaFile.clear();
+
+    foreach (const QTemporaryFile * fPtr, m_tempDecodedFile)
+        if(fPtr != nullptr) {delete fPtr;}
+    m_tempDecodedFile.clear();
+
+    writeSettings();
 }
 
 void MainWindow::refreshProgress(int value)
@@ -161,6 +170,8 @@ void MainWindow::parseFinished(QList<QStringList> parsedList,  QList<QTemporaryF
     tableView->resizeColumnsToContents();
 
     m_tempMediaFile.append(fileNameList);
+
+    m_tempDecodedFile.append(QVector<QTemporaryFile * >(fileNameList.size(), nullptr));
 }
 
 void MainWindow::lastWords(const QString &laswords) {
@@ -236,12 +247,40 @@ void MainWindow::clearTable()
     foreach (const QTemporaryFile * fPtr, m_tempMediaFile)
         delete fPtr;
     m_tempMediaFile.clear();
+
+    foreach (const QTemporaryFile * fPtr, m_tempDecodedFile)
+        if(fPtr != nullptr) {delete fPtr;}
+    m_tempDecodedFile.clear();
 }
 
 void MainWindow::exit()
 {
     qDebug() << "exit action";
     close();
+}
+
+void MainWindow::startDecoding(int index)
+{
+    m_pProgressBar->show();
+    decodeThread = new DecodeThread(m_tempMediaFile.at(index)->fileName(), tableModel->index(index, COL_codec).data().toInt(), this);
+    connect(decodeThread, &DecodeThread::updateProgress, this, &MainWindow::refreshProgress);
+    connect(decodeThread, &DecodeThread::decodeSuccess, this, &MainWindow::decodeFinished);
+    connect(decodeThread, &DecodeThread::lastWords, this, &MainWindow::lastWords);
+    connect(decodeThread, &DecodeThread::finished, this, &MainWindow::decodeThrOver);
+    decodeThread->start();
+}
+
+void MainWindow::decodeFinished(QTemporaryFile * decodeResult)
+{
+    m_tempDecodedFile[waitForPlotList.at(0)] = decodeResult;
+    plotOnChart(waitForPlotList);
+}
+
+void MainWindow::decodeThrOver()
+{
+    m_pProgressBar->hide();
+    decodeThread->deleteLater();
+    decodeThread = nullptr;
 }
 
 void MainWindow::plot()
@@ -257,7 +296,20 @@ void MainWindow::plot()
     qSort(indexList.begin(), indexList.end());
     qDebug() << "index:" << indexList[0] << "codec:" << tableModel->index(indexList[0], COL_codec).data().toInt() << m_tempMediaFile.at(indexList[0])->fileName();
 
-    QFile mediaDataFile(m_tempMediaFile.at(indexList[0])->fileName());
+    if (m_tempDecodedFile.at(indexList[0]) == nullptr){
+        waitForPlotList.append(indexList[0]);
+        startDecoding(indexList[0]);
+    }
+
+    else {
+        plotOnChart(indexList);
+    }
+
+}
+
+void MainWindow::plotOnChart(QList<int>indexList)
+{
+    QFile mediaDataFile(m_tempDecodedFile.at(indexList.at(0))->fileName());
     if(!mediaDataFile.open(QIODevice::ReadOnly)) {
         statusBar()->showMessage("error reading cache files!");
         return;
