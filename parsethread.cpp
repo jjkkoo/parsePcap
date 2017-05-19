@@ -1,7 +1,7 @@
 #include <parsethread.h>
 
 //#define LINE_LEN 16
-const char packet_filter[] = "ip and udp || ip6 and udp";
+const char packet_filter[] = "ip and udp and udp[8]=0x80 || ip6 and udp and udp[8]=0x80";
 const QString parseWasSuccess("parsing seems okay");
 QString parseError;
 struct bpf_program fcode;
