@@ -1,7 +1,7 @@
 #include <parsethread.h>
 
 //#define LINE_LEN 16
-const char packet_filter[] = "ip and udp and udp[8]=0x80 || ip6 and udp and udp[8]=0x80";
+const char packet_filter[] = "(ip and udp and udp[8]=0x80) or (ip6 and udp)";   // and udp[8]=0x80
 const QString parseWasSuccess("parsing seems okay");
 QString parseError;
 struct bpf_program fcode;
@@ -239,6 +239,7 @@ void ParseThread::run()
                 payloadType = QString("%1").arg(rh->pt);
                 ssrc = QString::number(ntohl(rh->ssrc), 16).trimmed().toUpper();
 
+                //qDebug() << pktDateTime << ":" << QString("%1;%2;%3;%4;%5").arg(sourceIp).arg(srcPort).arg(destIp).arg(destPort).arg(ssrc);
                 QString tempHashKey = QString("%1;%2;%3;%4;%5").arg(sourceIp).arg(srcPort).arg(destIp).arg(destPort).arg(ssrc);
                 if (parseResultDict.contains(tempHashKey)){
                     /* update depository entry */
