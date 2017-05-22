@@ -6,6 +6,9 @@ extern "C" {
 #include <string.h>
 #include <memory.h>
 
+#include <bitset>
+#include <string>
+
 #include "interf_dec.h"
 #include "interf_rom.h"
 #include "rom_dec.h"
@@ -42,6 +45,18 @@ enum codecColumns
     COL_EVS
 };
 #endif
+
+typedef struct toc{
+    unsigned char fBit:1;
+    unsigned char FT:4;
+    unsigned char qBit:1;
+}toc;
+
+typedef struct amr_header{
+    unsigned char cmr:4;
+    toc tocList;
+    unsigned char * frameData;
+}amr_header;
 
 class DecodeThread : public QThread
 {

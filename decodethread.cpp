@@ -1,5 +1,7 @@
 #include "decodethread.h"
 
+using std::bitset;
+
 const QString decodeWasSuccess("decoding seems okay");
 
 DecodeThread::DecodeThread(const QString &decodeFile, int codec, QObject *parent) : QThread(parent),
@@ -23,7 +25,7 @@ void DecodeThread::run()
 
     QTemporaryFile *decodeResult = new QTemporaryFile("decoder"); //todo free memory
     if (decodeResult->open()){
-        qDebug() << decodeResult->fileName();
+        qDebug() << "decodeResult:" << decodeResult->fileName();
     }
     if (codec == 0) {// or codec == 1) {
         FILE * file_speech, *file_analysis;
@@ -76,35 +78,58 @@ void DecodeThread::run()
         Word32 frame;
         char magic[16];
         void *st;
-
+        unsigned char FTList[12], FTCount;    //max number of amr frame in one packet
+        unsigned short mediaLen;
+        int currentFT = 4;
         if ((f_serial = fopen(qPrintable(decodeFile), "rb")) == NULL)
         {
-            //fprintf(stderr, "Input file '%s' does not exist !!\n", argv[1]);
-            qDebug() << 1;
-        }
-        else
-
-        if ((f_synth = fopen(qPrintable(decodeResult->fileName()), "wb")) == NULL)
-        {
-            qDebug() << 2;
+            qDebug() << "error open input file:" << decodeFile;
+            return;
         }
 
         st = D_IF_init();
         frame = 0;
-            while (fread(serial, sizeof (UWord8), 2, f_serial ) > 0)
-            {
-               mode = (Word16)((serial[1] >> 7) & 0x0F);
-               qDebug() << mode << block_size[mode] - 1;
-               fread(&serial[1], sizeof (UWord8), block_size[mode] - 1, f_serial );
-               frame++;
-               fprintf(stderr, " Decoding frame: %ld\r", frame);
-               D_IF_decode( st, serial, synth, _good_frame);
-               fwrite(synth, sizeof(Word16), L_FRAME16k, f_synth);
-               fflush(f_synth);
+        while(fread(mediaLen, sizeof(unsigned short), 1, f_serial)) {
+            qDebug() << mediaLen;
+            FTCount = 0;
+            while(fread(serial, sizeof (UWord8), mediaLen, f_serial )) {    //read whole packet
+                int currentByte
+                for(int i = 0; i < 9; ++i){    //enough for search FT
+                    bitset<8> bs(*serial);
+                    if (bs[currentFT]==0 or i >mediaLen)
+                        break;
+                    else {
+
+                    }
+                }
+
+                FTList[FTCount] = tempChar
+                if (FTList[FTCount] & fBitMark != 0) {
+                    fBitMark = fBitMark >> 6;
+                }
+                else {
+                    break;
+                }
             }
-            D_IF_exit(st);
-            fclose(f_serial);
-            fclose(f_synth);
+        }
+
+
+        while (fread(serial, sizeof (UWord8), 2, f_serial ) > 0)
+        {
+            FTCount = 0;
+            //while ()
+            mode = (Word16)((serial[1] >> 7) & 0x0F);
+            qDebug() << mode << block_size[mode] - 1;
+            fread(&serial[1], sizeof (UWord8), block_size[mode] - 1, f_serial );
+            frame++;
+            fprintf(stderr, " Decoding frame: %ld\r", frame);
+            D_IF_decode( st, serial, synth, _good_frame);
+            fwrite(synth, sizeof(Word16), L_FRAME16k, f_synth);
+            fflush(f_synth);
+        }
+        D_IF_exit(st);
+        fclose(f_serial);
+        fclose(f_synth);
     }
 /*
     while((res = pcap_next_ex( fp, &header, &pkt_data)) >= 0)

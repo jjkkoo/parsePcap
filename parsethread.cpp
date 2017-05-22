@@ -172,6 +172,7 @@ void ParseThread::run()
     char sourceIpv6Buffer[40], destIpv6Buffer[40];
     int *sourceIPv6Len = 0,  *destIpv6len = 0;
     char ip_version;
+    unsigned short mediaLen;
 
     m_parseResult->clear();
     while((res = pcap_next_ex( fp, &header, &pkt_data)) >= 0)
@@ -243,8 +244,9 @@ void ParseThread::run()
                     /* update depository entry */
                     parseResult[parseResultDict[tempHashKey].position][COL_last_packet_time] = pktDateTime;
                     ++parseResultDict[tempHashKey].pktCount;
-
-                    int numWritten = parseResultDict[tempHashKey].mediaFile->write((char *)rh + rtp_len, header->len - dl_len - ip_len - 8 - rtp_len);
+                    mediaLen = header->len - dl_len - ip_len - 8 - rtp_len;
+                    parseResultDict[tempHashKey].mediaFile->write((char *) &mediaLen, sizeof(mediaLen));
+                    int numWritten = parseResultDict[tempHashKey].mediaFile->write((char *)rh + rtp_len, mediaLen);
                     //parseResultDict[tempHashKey].mediaFile->write(magicByte);
                 }
                 else {
@@ -255,9 +257,10 @@ void ParseThread::run()
 
                     QTemporaryFile *tmpFile = new QTemporaryFile("parsePcap"); //todo free memory
                     if (tmpFile->open()){
-
                         //tmpFile->write(magicByte);
-                        int numWritten = tmpFile->write((char *)rh + rtp_len, header->len - dl_len - ip_len - 8 - rtp_len);
+                        mediaLen = header->len - dl_len - ip_len - 8 - rtp_len;
+                        tmpFile->write((char *) &mediaLen, sizeof(mediaLen));
+                        int numWritten = tmpFile->write((char *)rh + rtp_len, mediaLen);
                         //tmpFile->write(magicByte);
                     }
                     parseResultInfo *pri = new parseResultInfo {parseResult.size() - 1, 1, tmpFile};    //todo free memory
