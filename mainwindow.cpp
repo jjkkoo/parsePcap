@@ -314,16 +314,17 @@ void MainWindow::plotOnChart(QList<int>indexList)
         statusBar()->showMessage("error reading cache files!");
         return;
     }
-
-    chart->axisX(series)->setRange(0, mediaDataFile.size()/2*0.05 );
-    zoomInfo zi{0, mediaDataFile.size()/2*0.05, mediaDataFile.size()/2*0.05, mediaDataFile.size()/2*0.05};
+    double codec = (tableModel->index(indexList[0], COL_codec).data().toString() == "0") ? 1.0 / 8000 : 1.0 /16000;
+    double maxLen = mediaDataFile.size()/2.0*codec;
+    chart->axisX(series)->setRange(0, mediaDataFile.size()/2.0*codec );
+    zoomInfo zi{0, maxLen, maxLen, maxLen};
     chartView->setZoomInfo(zi);
 
     QVector<QPointF> points;
     char shortData[2];
     for (int k = 0; k < mediaDataFile.size() / 2; ++k) {
         mediaDataFile.read(shortData, 2);
-        points.append( QPointF(k * 0.05, *(short *)shortData ));
+        points.append( QPointF(k * codec, *(short *)shortData ));
     }
    // qDebug() << points;
     series->replace(points);

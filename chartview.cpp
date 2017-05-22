@@ -59,7 +59,7 @@ void ChartView::wheelEvent(QWheelEvent *event)
         if (zoomInfoList.at(0).step < zoomInfoList.at(0).max) {  //make sure step less than max
             zoomInfoList[0].step = (zoomInfoList.at(0).step * 2 > zoomInfoList.at(0).max ?    //if zoom result step larger than max then use max
                                         zoomInfoList.at(0).max : zoomInfoList[0].step * 2);
-            if(zoomInfoList[0].start / zoomInfoList[0].step % 2 == 0) {    //calculate which half we are now
+            if(qRound(zoomInfoList[0].start / zoomInfoList[0].step) % 2 == 0) {    //calculate which half we are now
                 if(zoomInfoList.at(0).max < zoomInfoList.at(0).start + zoomInfoList.at(0).step) {   //overfilled
                     zoomInfoList[0].end = zoomInfoList.at(0).max;
                     zoomInfoList[0].start = 0;

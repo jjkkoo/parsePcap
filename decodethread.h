@@ -5,10 +5,6 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 #include <memory.h>
-
-#include <bitset>
-#include <string>
-
 #include "interf_dec.h"
 #include "interf_rom.h"
 #include "rom_dec.h"
@@ -27,6 +23,7 @@ extern "C" {
 #include "typedef.h"
 }
 
+#include <QtMath>
 #include <QThread>
 #include <QDebug>
 #include <QMutex>
@@ -46,6 +43,10 @@ enum codecColumns
 };
 #endif
 
+const unsigned int amr_nb_nob[16]={ 95, 103, 118, 134, 148, 159, 204, 244,
+                                    39 , 0 , 0 , 0 , 0 , 0 , 0 , 0  };
+const unsigned int amr_wb_nob[16]={ 132, 177, 253, 285, 317, 365, 397, 461, 477,
+                                    40, 0 , 0 , 0 , 0 , 0 , 0  };
 typedef struct toc{
     unsigned char fBit:1;
     unsigned char FT:4;

@@ -6,15 +6,16 @@
 #include <QtWidgets/QRubberBand>
 
 #include <QDebug>
+#include <QtMath>
 
 QT_CHARTS_USE_NAMESPACE
 
 
 typedef struct zoomInfo {
-    int start;
-    int end;
-    int step;
-    int max;
+    double start;
+    double end;
+    double step;
+    double max;
 }zoomInfo;
 
 class ChartView : public QChartView
