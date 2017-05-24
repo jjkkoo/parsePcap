@@ -31,7 +31,9 @@ SOURCES += main.cpp\
     comboboxdelegate.cpp \
     customchart.cpp \
     chartview.cpp \
-    decodethread.cpp
+    decodethread.cpp \
+    tabdialog.cpp \
+    dialogmodel.cpp
 
 HEADERS  += mainwindow.h \
     customtablemodel.h \
@@ -39,5 +41,7 @@ HEADERS  += mainwindow.h \
     comboboxdelegate.h \
     customchart.h \
     chartview.h \
-    decodethread.h
+    decodethread.h \
+    tabdialog.h \
+    dialogmodel.h
 

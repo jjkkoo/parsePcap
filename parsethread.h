@@ -1,4 +1,5 @@
 #include <QThread>
+#include <QSettings>
 #include <QDebug>
 #include <QMutex>
 #include <Qdatetime>
@@ -143,4 +144,5 @@ private:
     QString pcapFileName;
     int packetCount;
     QList<QStringList>* m_parseResult;
+    int m_PtMap[32];
 };

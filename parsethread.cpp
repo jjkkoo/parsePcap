@@ -1,7 +1,7 @@
 #include <parsethread.h>
 
 //#define LINE_LEN 16
-const char packet_filter[] = "(ip and udp and udp[8]=0x80) or (ip6 and udp)";   // and udp[8]=0x80
+const char *default_packet_filter = "ip and udp and udp[8]=0x80 or ip6 and udp";   // and udp[8]=0x80
 const QString parseWasSuccess("parsing seems okay");
 QString parseError;
 struct bpf_program fcode;
@@ -29,6 +29,13 @@ ParseThread::ParseThread(QString jobFile, QObject *parent) : QThread(parent), pc
 {
     qDebug() << "Worker Thread : " << QThread::currentThreadId() << "," << "pcapFileName:" << pcapFileName;
     m_abort = false;
+
+    QSettings settings("jjkkoo", "parsePcap");
+    settings.beginGroup("PayLoadTypeMap");
+    for(int i = 0; i < 32; ++i)
+        m_PtMap[i] = settings.value(QString("pt%1").arg(i), 0).toInt();
+    settings.endGroup();
+
 }
 
 ParseThread::~ParseThread()
@@ -42,6 +49,11 @@ ParseThread::~ParseThread()
 
 void ParseThread::run()
 {
+    QSettings settings("jjkkoo", "parsePcap");
+    settings.beginGroup("MainWindow");
+    QString Qpacket_filter = settings.value("filterString", "ip and udp and udp[8]=0x80 or ip6 and udp").toString();
+    settings.endGroup();
+
     qDebug() << "Worker Run Thread : " << QThread::currentThreadId();
 
     pcap_t *fp;
@@ -91,11 +103,12 @@ void ParseThread::run()
     }
 
     //compile the filter
-    if (pcap_compile(fp, &fcode, packet_filter, 1, netmask) <0 )
+    if (pcap_compile(fp, &fcode, qPrintable(Qpacket_filter), 1, netmask) <0 )
     {
-        fprintf(stderr,"\nUnable to compile the packet filter. Check the syntax.\n");
-        /* Free the device list */
-        return;
+        qDebug() << "Unable to compile the packet filter. Check the syntax.";
+        qDebug() << Qpacket_filter;
+        parseError = QString("Unable to compile the packet filter, using default");
+        pcap_compile(fp, &fcode, default_packet_filter, 1, netmask);
     }
 
     //set the filter
@@ -133,13 +146,6 @@ void ParseThread::run()
         return;
     }
 
-    //compile the filter
-    if (pcap_compile(fp, &fcode, packet_filter, 1, netmask) <0 )
-    {
-        fprintf(stderr,"\nUnable to compile the packet filter. Check the syntax.\n");
-        /* Free the device list */
-        return;
-    }
 
     //set the filter
     if (pcap_setfilter(fp, &fcode)<0)
@@ -213,7 +219,8 @@ void ParseThread::run()
             qDebug() << "unknown type error";
             return;
         }
-
+        /* assure udp packet */
+        if (ip_version == 0x40 and ih->proto != 0x11 or ip_version == 0x60 and ihv6->next_header!= 0x11)    continue;
         /* retrieve udp header */
         uh = (udp_header *) (pkt_data + dl_len + ip_len);
 
@@ -229,6 +236,8 @@ void ParseThread::run()
             else {
                 rtp_len = 12 + rh->cc * 32;
             }
+            /* assure rtp packet */
+            if (rh->v != 2 or rh->p != 0 or rtp_len >= header->len)    continue;
             /* assert amr packet, check pt 96 <= pt <=127 , check srcPort and destPort > 1024 */
             if (rh->pt >= 96 and ntohs(uh->sport) > 1024 and ntohs(uh->dport) >1024) {
                 /* extract information from packet */
@@ -253,13 +262,14 @@ void ParseThread::run()
                 else {
                     /* create new depository entry */
                     QStringList tmpSL;
-                    tmpSL << sourceIp << srcPort << destIp << destPort << pktDateTime << pktDateTime << "" << payloadType << ssrc << "" << "" << "" << "" << "";
+                    tmpSL << sourceIp << srcPort << destIp << destPort << pktDateTime << pktDateTime << "" << payloadType << ssrc << QString::number(m_PtMap[rh->pt-96]) << "" << "" << "" << "";
                     parseResult.append(tmpSL);
 
                     QTemporaryFile *tmpFile = new QTemporaryFile("parsePcap"); //todo free memory
                     if (tmpFile->open()){
                         //tmpFile->write(magicByte);
                         mediaLen = header->len - dl_len - ip_len - 8 - rtp_len;
+                        //qDebug() << header->len << dl_len << ip_len << rtp_len << mediaLen;
                         tmpFile->write((char *) &mediaLen, sizeof(mediaLen));
                         int numWritten = tmpFile->write((char *)rh + rtp_len, mediaLen);
                         //tmpFile->write(magicByte);
@@ -271,19 +281,25 @@ void ParseThread::run()
         }
     }
 
-    QTemporaryFile * mediaFileList[parseResultDict.size()];
-    foreach (const parseResultInfo &tmppri ,parseResultDict){
-        parseResult[tmppri.position][COL_pktCount] = QString("%1").arg(tmppri.pktCount);
-        mediaFileList[tmppri.position] = tmppri.mediaFile;
-        mediaFileList[tmppri.position]->close();
-    }
+    if (parseResultDict.size() > 0) {
+        QTemporaryFile * mediaFileList[parseResultDict.size()];
+        foreach (const parseResultInfo &tmppri ,parseResultDict){
+            parseResult[tmppri.position][COL_pktCount] = QString("%1").arg(tmppri.pktCount);
+            mediaFileList[tmppri.position] = tmppri.mediaFile;
+            mediaFileList[tmppri.position]->close();
+        }
 
-    QList<QTemporaryFile *> mediaList;
-    for (int i = 0; i < parseResultDict.size(); ++i){
-        mediaList << mediaFileList[i];
+        QList<QTemporaryFile *> mediaList;
+        for (int i = 0; i < parseResultDict.size(); ++i){
+            mediaList << mediaFileList[i];
+        }
+        //qDebug() << parseResult;
+        emit parseSuccess(parseResult, mediaList);
     }
-    emit parseSuccess(parseResult, mediaList);
-    emit lastWords(parseWasSuccess);
+    else {
+        parseError = QString("0 packet available!");
+    }
+    emit lastWords(parseError == QString() ? parseWasSuccess : parseError);
     pcap_close (fp);
 }
 

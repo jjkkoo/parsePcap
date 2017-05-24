@@ -1,14 +1,12 @@
 
 #include "CustomTableModel.h"
-#include <QtCore/QVector>
-#include <QtCore/QTime>
-#include <QtCore/QRect>
-#include <QtGui/QColor>
+
+#include <QDebug>
 
 CustomTableModel::CustomTableModel(QObject *parent) : m_rowCount(0), m_data(QList<QStringList>()),
     QAbstractTableModel(parent)
 {
-    qsrand(QTime(0, 0, 0).secsTo(QTime::currentTime()));
+    //qsrand(QTime(0, 0, 0).secsTo(QTime::currentTime()));
 
     //m_columnCount = 12;
     //m_rowCount = 0;
@@ -45,10 +43,7 @@ QVariant CustomTableModel::headerData(int section, Qt::Orientation orientation, 
 
     if (orientation == Qt::Horizontal) {
         return columnHeader.at(section);
-//        if (section % 2 == 0)
-//            return "x";
-//        else
-//            return "y";
+
     } else {
         return QString("%1").arg(section + 1);
     }

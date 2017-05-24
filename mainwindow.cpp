@@ -84,7 +84,6 @@ void MainWindow::initUI()
     m_pProgressBar->hide();
     chartView->hide();
     statusBar()->showMessage("");
-    setWindowTitle(tr("parsePcap"));
 }
 
 void MainWindow::writeSettings()
@@ -316,16 +315,24 @@ void MainWindow::plotOnChart(QList<int>indexList)
     }
     double codec = (tableModel->index(indexList[0], COL_codec).data().toString() == "0") ? 1.0 / 8000 : 1.0 /16000;
     double maxLen = mediaDataFile.size()/2.0*codec;
-    chart->axisX(series)->setRange(0, mediaDataFile.size()/2.0*codec );
+
     zoomInfo zi{0, maxLen, maxLen, maxLen};
     chartView->setZoomInfo(zi);
 
     QVector<QPointF> points;
     char shortData[2];
+    int tempMax = 0, tempCounter = 0, threashHolder = mediaDataFile.size() / 2 / 4000;
     for (int k = 0; k < mediaDataFile.size() / 2; ++k) {
         mediaDataFile.read(shortData, 2);
-        points.append( QPointF(k * codec, *(short *)shortData ));
+        if (++tempCounter > threashHolder) {
+            points.append( QPointF(k * codec, *(short *)shortData ));
+            if (qAbs(*(short *)shortData) > tempMax)
+                tempMax = qAbs(*(short *)shortData);
+            tempCounter = 0;
+        }
     }
+    chart->axisX(series)->setRange(0, mediaDataFile.size()/2.0*codec );
+    chart->axisY(series)->setRange(-tempMax, tempMax );
    // qDebug() << points;
     series->replace(points);
     series->setName(QString("index:%1_%2_%3_%4_%5").arg(indexList[0] + 1).arg(tableModel->index(indexList[0], COL_source_ip).data().toString()).arg(tableModel->index(indexList[0], COL_srcPort).data().toString())
@@ -350,6 +357,14 @@ void MainWindow::stop()
 {
     qDebug() << "stop action";
 }
+
+void MainWindow::showPreference()
+{
+    qDebug() << "showPreference";
+    TabDialog tabdialog(this);
+    tabdialog.exec();
+}
+
 /*
 void MainWindow::mark()
 {
@@ -393,6 +408,12 @@ void MainWindow::createActions()
     stopAct->setShortcut(tr("F9"));
     stopAct->setStatusTip(tr("Stop"));
     connect(stopAct, &QAction::triggered, this, &MainWindow::stop);
+
+    preferenceAct = new QAction(tr("&Preference"), this);
+    preferenceAct->setShortcut(tr("F10"));
+    preferenceAct->setStatusTip(tr("Preference"));
+    connect(preferenceAct, &QAction::triggered, this, &MainWindow::showPreference);
+
 /*
     markAct = new QAction(tr("&Mark"), this);
     markAct->setShortcut(tr("F2"));
@@ -426,6 +447,9 @@ void MainWindow::createMenus()
     playMenu->addAction(stopAct);
 
     modesMenu= menuBar()->addMenu(tr("&Modes"));
+
+    settingsMenu= menuBar()->addMenu(tr("&Settings"));
+    settingsMenu->addAction(preferenceAct);
 
     helpMenu = menuBar()->addMenu(tr("&Help"));
 //    helpMenu->addAction(aboutAct);

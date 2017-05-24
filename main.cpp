@@ -8,8 +8,9 @@ int main(int argc, char *argv[])
 {
     qRegisterMetaType< QList<QStringList> >("parseResult");
     qRegisterMetaType< QList<QTemporaryFile *> > ("mediaFileList");
-    QCoreApplication::addLibraryPath("./dll");
+    //QCoreApplication::addLibraryPath("./dll");
     QApplication a(argc, argv);
+    a.setApplicationDisplayName("parsePcap");
     MainWindow w;
     w.show();
 

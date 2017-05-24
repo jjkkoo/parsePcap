@@ -33,6 +33,7 @@ QT_END_NAMESPACE
 #include "parsethread.h"
 #include "decodethread.h"
 #include "comboboxdelegate.h"
+#include "tabdialog.h"
 
 //QT_CHARTS_USE_NAMESPACE
 
@@ -63,6 +64,7 @@ private slots:
     void exportMedia();
     void play();
     void stop();
+    void showPreference();
     //void mark();
     void refreshProgress(int value);
     void parseFinished(QList<QStringList> parsedList, QList<QTemporaryFile *> fileNameList);//QStringList fileNameList);
@@ -88,6 +90,7 @@ private:
     QMenu *editMenu;
     QMenu *playMenu;
     QMenu *modesMenu;
+    QMenu *settingsMenu;
     QMenu *helpMenu;
 
     QAction *pickAct;
@@ -97,6 +100,7 @@ private:
     QAction *exportAct;
     QAction *playAct;
     QAction *stopAct;
+    QAction *preferenceAct;
     //QAction *markAct;
 
     QTableView *tableView;
