@@ -58,9 +58,13 @@ GeneralTab::GeneralTab(QWidget *parent)
     QLabel *fileNameLabel = new QLabel(tr("Payload Type:"));
     fileNameEdit = new QLineEdit(filterString);
 
+    QLabel *bpsLinK = new QLabel(tr("<a href=\"https://www.winpcap.org/docs/docs_40_2/html/group__language.html\">Filtering expression syntax"));
+    bpsLinK->setOpenExternalLinks(true);
+
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(fileNameLabel);
     mainLayout->addWidget(fileNameEdit);
+    mainLayout->addWidget(bpsLinK);
 
     mainLayout->addStretch(1);
     setLayout(mainLayout);

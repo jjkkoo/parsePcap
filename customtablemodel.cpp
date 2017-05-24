@@ -55,14 +55,12 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const
         return m_data[index.row()].at(index.column());
     } else if (role == Qt::EditRole) {
         return m_data[index.row()].at(index.column());
-    } /*else if (role == Qt::BackgroundRole) {
-        foreach (QRect rect, m_mapping) {
-            if (rect.contains(index.column(), index.row()))
-                return QColor(m_mapping.key(rect));
-        }
-        // cell not mapped return white color
-        return QColor(Qt::white);
-    }*/
+    } else if (role == Qt::BackgroundRole) {
+        if (index.row() % 2 == 1)
+            return QColor("#E6E6FA");    //lavender http://www.wahart.com.hk/rgb.htm
+        else
+            return QColor(Qt::white);
+    }
     return QVariant();
 }
 

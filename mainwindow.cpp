@@ -352,8 +352,8 @@ void MainWindow::plotOnChart(QList<int>indexList)
     series->replace(points);
     series->setName(QString("index:%1_%2_%3_%4_%5").arg(indexList[0] + 1).arg(tableModel->index(indexList[0], COL_source_ip).data().toString()).arg(tableModel->index(indexList[0], COL_srcPort).data().toString())
             .arg(tableModel->index(indexList[0], COL_dest_ip).data().toString()).arg(tableModel->index(indexList[0], COL_destPort).data().toString()));
-//    QPen pen(QRgb(0x000000));
-//    series->setPen(pen);
+    QPen pen(QRgb("#E6E6FA"));
+    series->setPen(pen);
     chartView->show();
     mediaDataFile.close();
 }

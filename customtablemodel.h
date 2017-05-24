@@ -4,6 +4,7 @@
 #include <QtCore/QAbstractTableModel>
 #include <QtCore/QHash>
 #include <QtCore/QRect>
+#include <QColor>
 
 #ifndef COLUMNS_H
 #define COLUMNS_H
