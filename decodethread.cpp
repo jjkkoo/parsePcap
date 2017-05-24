@@ -2,7 +2,7 @@
 
 const QString decodeWasSuccess("decoding seems okay");
 
-DecodeThread::DecodeThread(const QString &decodeFile, int codec, QObject *parent) : QThread(parent),
+DecodeThread::DecodeThread(QTemporaryFile *decodeFile, int codec, QObject *parent) : QThread(parent),
     m_abort(false), decodeFile(decodeFile), codec(codec)
 {
     qDebug() << "Decoder construct Thread : " << QThread::currentThreadId() << "," << "decodeFileName:" << decodeFile << "," << "codec:" << codec;
@@ -25,6 +25,9 @@ void DecodeThread::run()
     if (decodeResult->open()){
         qDebug() << "decodeResult:" << decodeResult->fileName();
     }
+
+    qint64 tempByteRead = 0, filesize = decodeFile->size();
+    int currentProgress = 0;
     if (codec == 0) {// or codec == 1) {
         FILE *f_serial;                        /* File of serial bits for transmission  */
         Word16 synth[160];              /* Buffer for speech @ 8kHz             */
@@ -35,7 +38,7 @@ void DecodeThread::run()
         unsigned short pktLen;                //current packet length
         unsigned char currentFTptr = 4;       //FT pointer and amr data pointer
         unsigned int bytePtr = 0;             //current byte pointer
-        if ((f_serial = fopen(qPrintable(decodeFile), "rb")) == NULL)
+        if ((f_serial = fopen(qPrintable(decodeFile->fileName()), "rb")) == NULL)
         {
             qDebug() << "error open input file:" << decodeFile;
             return;
@@ -53,6 +56,12 @@ void DecodeThread::run()
                 qDebug() << "error reading packets";
                 break;
             }
+            tempByteRead += (2 + pktLen);
+            if (m_abort)    return;
+            //qDebug() << tempByteRead << " " << filesize;
+            if (100 * ++tempByteRead / filesize > currentProgress)
+                emit updateProgress(++currentProgress);
+
             /* get all FT into an array, max len 12 */
             while (FTCount < 12 and bytePtr < pktLen) {
                 if(currentFTptr > 3 and currentFTptr < 7) {
@@ -139,15 +148,20 @@ void DecodeThread::run()
         unsigned short pktLen;                //current packet length
         unsigned char currentFTptr = 4;       //FT pointer and amr data pointer
         unsigned int bytePtr = 0;             //current byte pointer
-        if ((f_serial = fopen(qPrintable(decodeFile), "rb")) == NULL)
+        if ((f_serial = fopen(qPrintable(decodeFile->fileName()), "rb")) == NULL)
         {
-            qDebug() << "error open input file:" << decodeFile;
+            qDebug() << "error open input file:" << decodeFile->fileName();
             return;
         }
 
         st = D_IF_init();
         frame = 0;
         while(fread(&pktLen, sizeof(unsigned short), 1, f_serial)) {
+            tempByteRead += (2 + pktLen);
+            if (m_abort)    return;
+            //qDebug() << tempByteRead << " " << filesize;
+            if (100 * ++tempByteRead / filesize > currentProgress)
+                emit updateProgress(++currentProgress);
             //qDebug() << pktLen;
             FTCount = 0;
             bytePtr = 0;
@@ -229,19 +243,10 @@ void DecodeThread::run()
         qDebug() << decodeResult->fileName();
         qDebug() << frame;
     }
-/*
-    while((res = pcap_next_ex( fp, &header, &pkt_data)) >= 0)
-    {
-        if (m_abort)    return;
 
-        if (100 * ++currentPacketNo / packetCount > currentProgress) {
-            emit updateProgress(++currentProgress);
-        }
-*/
-
+//qDebug() << QDateTime::currentDateTime();
     emit decodeSuccess(decodeResult);
     emit lastWords(decodeWasSuccess);
-    //pcap_close (fp);
 }
 
 void DecodeThread::stopMe()

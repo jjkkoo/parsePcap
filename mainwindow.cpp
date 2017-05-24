@@ -3,7 +3,8 @@
 
 #include "mainwindow.h"
 
-MainWindow::MainWindow()
+MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
+ m_tempDecodedFile(QVector<QTemporaryFile *>())
 {
     QWidget *widget = new QWidget;
     setCentralWidget(widget);
@@ -186,8 +187,11 @@ void MainWindow::parseThrOver()
 
 void MainWindow::cancelAll()
 {
-    if (parseThread->isRunning()){
+    if (parseThread != nullptr and parseThread->isRunning()){
         parseThread->stopMe();
+    }
+    if (decodeThread != nullptr and decodeThread->isRunning()){
+        decodeThread->stopMe();
     }
 }
 
@@ -212,6 +216,7 @@ void MainWindow::copySelection()
 
 void MainWindow::startParsing(const QString filePath)
 {
+    m_pProgressBar->setValue(0);
     m_pProgressBar->show();
     parseThread = new ParseThread(filePath, this);
     connect(parseThread, &ParseThread::updateProgress, this, &MainWindow::refreshProgress);
@@ -240,16 +245,20 @@ void MainWindow::pickFile()
 
 void MainWindow::clearTable()
 {
-    qDebug() << "clearFile action";
+    qDebug() << "clearFile action" << m_tempMediaFile.count() << m_tempDecodedFile.count();
     tableModel->clearData();
 
-    foreach (const QTemporaryFile * fPtr, m_tempMediaFile)
-        delete fPtr;
-    m_tempMediaFile.clear();
-
-    foreach (const QTemporaryFile * fPtr, m_tempDecodedFile)
-        if(fPtr != nullptr) {delete fPtr;}
-    m_tempDecodedFile.clear();
+    if (m_tempMediaFile.count()) {
+        foreach (const QTemporaryFile * fPtr, m_tempMediaFile)
+            delete fPtr;
+        m_tempMediaFile.clear();
+    }
+    if (m_tempDecodedFile.count()) {
+        foreach (const QTemporaryFile * fPtr, m_tempDecodedFile)
+            if(fPtr != nullptr) {delete fPtr;}
+        m_tempDecodedFile.clear();
+    }
+    initUI();
 }
 
 void MainWindow::exit()
@@ -260,17 +269,20 @@ void MainWindow::exit()
 
 void MainWindow::startDecoding(int index)
 {
+    m_pProgressBar->setValue(0);
     m_pProgressBar->show();
-    decodeThread = new DecodeThread(m_tempMediaFile.at(index)->fileName(), tableModel->index(index, COL_codec).data().toInt(), this);
+    decodeThread = new DecodeThread(m_tempMediaFile.at(index), tableModel->index(index, COL_codec).data().toInt(), this);
     connect(decodeThread, &DecodeThread::updateProgress, this, &MainWindow::refreshProgress);
     connect(decodeThread, &DecodeThread::decodeSuccess, this, &MainWindow::decodeFinished);
     connect(decodeThread, &DecodeThread::lastWords, this, &MainWindow::lastWords);
     connect(decodeThread, &DecodeThread::finished, this, &MainWindow::decodeThrOver);
     decodeThread->start();
+    //qDebug() << QDateTime::currentDateTime();
 }
 
 void MainWindow::decodeFinished(QTemporaryFile * decodeResult)
 {
+    //qDebug() << QDateTime::currentDateTime();
     m_tempDecodedFile[waitForPlotList.at(0)] = decodeResult;
     plotOnChart(waitForPlotList);
 }
@@ -321,8 +333,10 @@ void MainWindow::plotOnChart(QList<int>indexList)
 
     QVector<QPointF> points;
     char shortData[2];
-    int tempMax = 0, tempCounter = 0, threashHolder = mediaDataFile.size() / 2 / 4000;
-    for (int k = 0; k < mediaDataFile.size() / 2; ++k) {
+    int tempMax = 0, tempCounter = 0, pLen = mediaDataFile.size() / 2,
+            threashHolder = pLen / 4000;
+//        qDebug() << QDateTime::currentDateTime();
+    for (int k = 0; k < pLen; ++k) {
         mediaDataFile.read(shortData, 2);
         if (++tempCounter > threashHolder) {
             points.append( QPointF(k * codec, *(short *)shortData ));
@@ -331,6 +345,7 @@ void MainWindow::plotOnChart(QList<int>indexList)
             tempCounter = 0;
         }
     }
+//        qDebug() << QDateTime::currentDateTime();
     chart->axisX(series)->setRange(0, mediaDataFile.size()/2.0*codec );
     chart->axisY(series)->setRange(-tempMax, tempMax );
    // qDebug() << points;

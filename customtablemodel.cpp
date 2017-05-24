@@ -117,9 +117,10 @@ bool CustomTableModel::appendData(QList<QStringList> data)
 
 bool CustomTableModel::clearData()
 {
-    beginRemoveRows(QModelIndex(), 0, rowCount() - 1);
-    m_data.clear();
-    endRemoveRows();
-
+    if( m_data.count() ) {
+        beginRemoveRows(QModelIndex(), 0, rowCount() - 1);
+        m_data.clear();
+        endRemoveRows();
+    }
     return true;
 }

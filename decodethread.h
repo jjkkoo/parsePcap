@@ -28,6 +28,7 @@ extern "C" {
 #include <QDebug>
 #include <QMutex>
 #include <QTemporaryFile>
+//#include <QDateTime>
 
 #ifndef CODEC_H
 #define CODEC_H
@@ -63,7 +64,7 @@ class DecodeThread : public QThread
 {
     Q_OBJECT
 public:
-    explicit DecodeThread(const QString &decodeFile, int codec, QObject *parent = 0);
+    explicit DecodeThread(QTemporaryFile *decodeFile, int codec, QObject *parent = 0);
     ~DecodeThread();
 
 signals:
@@ -80,7 +81,7 @@ protected:
 private:
     bool m_abort;
     QMutex mutex;
-    const QString decodeFile;
+    QTemporaryFile *decodeFile;
     int codec;
     //QTemporaryFile * decodeResult;
 };
