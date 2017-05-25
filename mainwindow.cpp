@@ -4,7 +4,7 @@
 #include "mainwindow.h"
 
 MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
- m_tempDecodedFile(QVector<QTemporaryFile *>())
+ m_tempDecodedFile(QVector<QTemporaryFile *>()), m_codecVector(QVector<int>())
 {
     QWidget *widget = new QWidget;
     setCentralWidget(widget);
@@ -172,6 +172,7 @@ void MainWindow::parseFinished(QList<QStringList> parsedList,  QList<QTemporaryF
     m_tempMediaFile.append(fileNameList);
 
     m_tempDecodedFile.append(QVector<QTemporaryFile * >(fileNameList.size(), nullptr));
+    m_codecVector.append(QVector<int>(fileNameList.size(), -1));
 }
 
 void MainWindow::lastWords(const QString &laswords) {
@@ -258,6 +259,7 @@ void MainWindow::clearTable()
             if(fPtr != nullptr) {delete fPtr;}
         m_tempDecodedFile.clear();
     }
+    m_codecVector.clear();
     initUI();
 }
 
@@ -283,8 +285,18 @@ void MainWindow::startDecoding(int index)
 void MainWindow::decodeFinished(QTemporaryFile * decodeResult)
 {
     //qDebug() << QDateTime::currentDateTime();
-    m_tempDecodedFile[waitForPlotList.at(0)] = decodeResult;
-    plotOnChart(waitForPlotList);
+    if (waitForPlotList.size() > 0) {
+        m_tempDecodedFile[waitForPlotList.at(0)] = decodeResult;
+        m_codecVector[waitForPlotList.at(0)] = tableModel->index(waitForPlotList.at(0), COL_codec).data().toInt();
+        plotOnChart(waitForPlotList);
+        waitForPlotList.clear();
+    }
+    else if (waitForExportList.size() > 0){
+        m_tempDecodedFile[waitForExportList.at(0)] = decodeResult;
+        m_codecVector[waitForExportList.at(0)] = tableModel->index(waitForExportList.at(0), COL_codec).data().toInt();
+        exportAfterDecode(waitForExportList);
+        waitForExportList.clear();
+    }
 }
 
 void MainWindow::decodeThrOver()
@@ -361,6 +373,46 @@ void MainWindow::plotOnChart(QList<int>indexList)
 void MainWindow::exportMedia()
 {
     qDebug() << "exportMedia action";
+    QItemSelectionModel * selection = tableView->selectionModel();
+    QModelIndexList indexes = selection->selectedIndexes();
+    QSet<int> indexRowSet;
+    foreach(const QModelIndex& index, indexes){
+        indexRowSet.insert(index.row());
+    }
+    QList<int> indexList = indexRowSet.toList();
+    //qSort(indexList.begin(), indexList.end());
+    //qDebug() << "index:" << indexList[0] << "codec:" << tableModel->index(indexList[0], COL_codec).data().toInt() << m_tempMediaFile.at(indexList[0])->fileName();
+
+   // if(indexList.size() != 0) {
+    //    foreach ( const int & index, indexList ) {
+            if (m_tempDecodedFile.at(indexList[0]) == nullptr) {
+                waitForExportList.append(indexList[0]);
+                startDecoding(indexList[0]);
+            }
+            else {
+                saveMediaFile(indexList[0]);
+            }
+  //      }
+   // }
+}
+
+void MainWindow::exportAfterDecode(QList<int> indexList)
+{
+    foreach ( const int & index, indexList ) {
+        saveMediaFile(index);
+    }
+}
+
+void MainWindow::saveMediaFile(int index)
+{
+    //qDebug() << tableModel->getLine(index).join("_").replace(":", " ");
+    QFile file(QString("index%1_%2").arg(index + 1).arg(tableModel->getLine(index).join("_").replace(":", " ")));
+    if (!file.open(QIODevice::WriteOnly))    return;
+    qDebug() << file.fileName() << m_codecVector.at(index);
+
+    CombinedHeader wavHeader { { {{'R','I','F','F'}, 1000}, {'W','A','V','E'} } , { {{'f','m','t',' '}, 16}, 1, 1, 8000, 16000, 2 ,16} };
+    file.write( (char *) &wavHeader, sizeof(CombinedHeader));
+   // file.write();
 }
 
 void MainWindow::play()

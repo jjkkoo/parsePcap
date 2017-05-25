@@ -6,7 +6,7 @@
 
 QT       += core gui
 QT       += charts
-#QT       += multimedia
+QT       += multimedia
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -43,5 +43,6 @@ HEADERS  += mainwindow.h \
     chartview.h \
     decodethread.h \
     tabdialog.h \
-    dialogmodel.h
+    dialogmodel.h \
+    wavefile.h
 

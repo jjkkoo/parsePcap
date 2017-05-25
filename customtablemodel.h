@@ -44,6 +44,7 @@ public:
 //    bool removeRows(int position, int rows, const QModelIndex &parent);
     bool appendData(QList<QStringList> data);
     bool clearData();
+    QStringList getLine(int index);
 
 private:
     int m_columnCount;

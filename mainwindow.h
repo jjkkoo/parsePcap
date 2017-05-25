@@ -34,6 +34,7 @@ QT_END_NAMESPACE
 #include "decodethread.h"
 #include "comboboxdelegate.h"
 #include "tabdialog.h"
+#include "wavefile.h"
 
 //QT_CHARTS_USE_NAMESPACE
 
@@ -85,6 +86,8 @@ private:
     void writeSettings();
     void startParsing(const QString filePath);
     void startDecoding(int index);
+    void exportAfterDecode(QList<int> indexList);
+    void saveMediaFile(int index);
 
     QMenu *fileMenu;
     QMenu *editMenu;
@@ -118,8 +121,10 @@ private:
     QString saveDir;
     QList<QTemporaryFile *> m_tempMediaFile;
     QVector<QTemporaryFile *> m_tempDecodedFile;
+    QVector<int> m_codecVector;
 
     QList<int> waitForPlotList;
+    QList<int> waitForExportList;
 };
 
 #endif

@@ -122,3 +122,8 @@ bool CustomTableModel::clearData()
     }
     return true;
 }
+
+
+QStringList CustomTableModel::getLine(int index) {
+    return m_data.at(index).mid(0,4);
+}
