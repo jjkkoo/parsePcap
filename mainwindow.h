@@ -13,12 +13,14 @@ class QXYSeries;
 class QProgressBar;
 class QDialog;
 class QStringList;
+//class QAudioDeviceInfo;
 //class QChart;
 //class QChartView;
 //class QHeaderView;
 //class QLineSeries;
 QT_END_NAMESPACE
 
+//using QAudio::State;
 
 //#include <QtCharts/QChart>
 //#include <QtCharts/QChartView>
@@ -26,6 +28,9 @@ QT_END_NAMESPACE
 #include <QtCharts/QValueAxis>
 //#include <QtCharts/QVXYModelMapper>
 #include <QtWidgets/QHeaderView>
+#include <QAudio>
+#include <QAudioFormat>
+#include <QAudioOutput>
 
 #include "customchart.h"
 #include "chartview.h"
@@ -76,18 +81,19 @@ private slots:
     void plotOnChart(QList<int>indexList);
     void cancelAll();
     void copySelection();
-
+    void playerRefreshProgress();
+    void handleStateChanged(QAudio::State newState);
 
 private:
     void createActions();
     void createMenus();
     void initUI();
-    void readSettings();
-    void writeSettings();
+    void setupPosition();
+    void savePosition();
     void startParsing(const QString filePath);
     void startDecoding(int index);
     void exportAfterDecode(QList<int> indexList);
-    void saveMediaFile(int index);
+    void saveMediaFile(int index, QString directory);
 
     QMenu *fileMenu;
     QMenu *editMenu;
@@ -117,14 +123,16 @@ private:
     //QList <ParseThread> *parseThreadList;
 
     QStringList *parseJobList;
-    QString pickDir;
-    QString saveDir;
     QList<QTemporaryFile *> m_tempMediaFile;
     QVector<QTemporaryFile *> m_tempDecodedFile;
     QVector<int> m_codecVector;
 
     QList<int> waitForPlotList;
     QList<int> waitForExportList;
+
+    QTemporaryFile *PlayerFile;
+    QAudioOutput *audio;
+    int currentSampleRate;
 };
 
 #endif

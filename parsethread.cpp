@@ -265,7 +265,7 @@ void ParseThread::run()
                     tmpSL << sourceIp << srcPort << destIp << destPort << pktDateTime << pktDateTime << "" << payloadType << ssrc << QString::number(m_PtMap[rh->pt-96]) << "" << "" << "" << "";
                     parseResult.append(tmpSL);
 
-                    QTemporaryFile *tmpFile = new QTemporaryFile("parsePcap"); //todo free memory
+                    QTemporaryFile *tmpFile = new QTemporaryFile("temp\\parsePcap"); //todo free memory
                     if (tmpFile->open()){
                         //tmpFile->write(magicByte);
                         mediaLen = header->len - dl_len - ip_len - 8 - rtp_len;

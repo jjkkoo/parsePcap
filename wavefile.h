@@ -4,6 +4,10 @@
 #include <QObject>
 
 const char dataConst[4] {'d','a','t','a'};
+//char riffConst[4] {'R','I','F','F'};
+//char waveConst[4] {'W','A','V','E'};
+//char fmtConst[4]  {'f','m','t',' '};
+
 struct chunk
 {
     char        id[4];

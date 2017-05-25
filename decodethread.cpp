@@ -21,7 +21,7 @@ void DecodeThread::run()
 {
     qDebug() << "decoder Thread : " << QThread::currentThreadId();
 
-    QTemporaryFile *decodeResult = new QTemporaryFile("decoder"); //todo free memory
+    QTemporaryFile *decodeResult = new QTemporaryFile("temp\\decoder"); //todo free memory
     if (decodeResult->open()){
         qDebug() << "decodeResult:" << decodeResult->fileName();
     }
@@ -65,7 +65,7 @@ void DecodeThread::run()
             /* get all FT into an array, max len 12 */
             while (FTCount < 12 and bytePtr < pktLen) {
                 if(currentFTptr > 3 and currentFTptr < 7) {
-                    FTList[FTCount++] =  (pktBuffer[bytePtr] << (currentFTptr - 3)) & 0x0f | ( pktBuffer[bytePtr + 1] >> (11 - currentFTptr));
+                    FTList[FTCount++] = ( (pktBuffer[bytePtr] << (currentFTptr - 3)) & 0x0f ) | ( pktBuffer[bytePtr + 1] >> (11 - currentFTptr));
                 }
                 else if (currentFTptr <= 3) {
                     FTList[FTCount++] = ( pktBuffer[bytePtr] >> (4 - currentFTptr)) & 0x0f;
@@ -87,7 +87,7 @@ void DecodeThread::run()
                             FTList[FTCount++] = ( pktBuffer[bytePtr + 1] >> 4) & 0x0f;
                         }
                         else {
-                            FTList[FTCount++] =  (pktBuffer[bytePtr] << (currentFTptr - 3)) & 0x0f | ( pktBuffer[bytePtr + 1] >> (11 - currentFTptr));
+                            FTList[FTCount++] = ( (pktBuffer[bytePtr] << (currentFTptr - 3)) & 0x0f ) | ( pktBuffer[bytePtr + 1] >> (11 - currentFTptr));
                         }
                         currentFTptr += 6;
                     }
@@ -173,7 +173,7 @@ void DecodeThread::run()
             /* get all FT into an array, max len 12 */
             while (FTCount < 12 and bytePtr < pktLen) {
                 if(currentFTptr > 3 and currentFTptr < 7) {
-                    FTList[FTCount++] =  (pktBuffer[bytePtr] << (currentFTptr - 3)) & 0x0f | ( pktBuffer[bytePtr + 1] >> (11 - currentFTptr));
+                    FTList[FTCount++] =  ((pktBuffer[bytePtr] << (currentFTptr - 3)) & 0x0f) | ( pktBuffer[bytePtr + 1] >> (11 - currentFTptr));
                 }
                 else if (currentFTptr <= 3) {
                     FTList[FTCount++] = ( pktBuffer[bytePtr] >> (4 - currentFTptr)) & 0x0f;
@@ -195,7 +195,7 @@ void DecodeThread::run()
                             FTList[FTCount++] = ( pktBuffer[bytePtr + 1] >> 4) & 0x0f;
                         }
                         else {
-                            FTList[FTCount++] =  (pktBuffer[bytePtr] << (currentFTptr - 3)) & 0x0f | ( pktBuffer[bytePtr + 1] >> (11 - currentFTptr));
+                            FTList[FTCount++] = ( (pktBuffer[bytePtr] << (currentFTptr - 3)) & 0x0f ) | ( pktBuffer[bytePtr + 1] >> (11 - currentFTptr));
                         }
                         currentFTptr += 6;
                     }

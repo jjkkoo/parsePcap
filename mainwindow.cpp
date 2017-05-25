@@ -4,7 +4,7 @@
 #include "mainwindow.h"
 
 MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
- m_tempDecodedFile(QVector<QTemporaryFile *>()), m_codecVector(QVector<int>())
+ m_tempDecodedFile(QVector<QTemporaryFile *>()), m_codecVector(QVector<int>()), PlayerFile(nullptr), audio(nullptr)
 {
     QWidget *widget = new QWidget;
     setCentralWidget(widget);
@@ -63,12 +63,15 @@ MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
     decodeThread = nullptr;
 
     initUI();
-    readSettings();
+    setupPosition();
 
     tableView->setAcceptDrops(false);
     chartView->setAcceptDrops(false);
     splitter->setAcceptDrops(false);
     setAcceptDrops(true);
+
+    QDir dir;
+    if (!dir.mkdir("temp"))    qDebug() << "no temp dir, creating one";
 }
 /*
 #ifndef QT_NO_CONTEXTMENU
@@ -87,34 +90,28 @@ void MainWindow::initUI()
     statusBar()->showMessage("");
 }
 
-void MainWindow::writeSettings()
+void MainWindow::savePosition()
 {
     QSettings settings("jjkkoo", "parsePcap");
-
     settings.beginGroup("MainWindow");
     settings.setValue("size", size());
     settings.setValue("pos", pos());
-    settings.setValue("pickDirectory", pickDir);
-    settings.setValue("saveDirectory", saveDir);
     settings.endGroup();
 }
 
-void MainWindow::readSettings()
+void MainWindow::setupPosition()
 {
     QSettings settings("jjkkoo", "parsePcap");
-
     settings.beginGroup("MainWindow");
     resize(settings.value("size", QSize(798, 507)).toSize());
     move(settings.value("pos", QPoint(200, 200)).toPoint());
-    pickDir = settings.value("pickDirectory", QCoreApplication::applicationDirPath()).toString();
-    saveDir = settings.value("saveDirectory", QCoreApplication::applicationDirPath()).toString();
     settings.endGroup();
     //qDebug() << QCoreApplication::applicationDirPath()<< "," << QDir::currentPath() << "," << QDir::current().path();
-    qDebug() << pickDir;
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+    stop();
     if (parseThread == nullptr and decodeThread == nullptr) {
         qDebug() << "ready to exit";
         event->accept();
@@ -151,7 +148,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         if(fPtr != nullptr) {delete fPtr;}
     m_tempDecodedFile.clear();
 
-    writeSettings();
+    savePosition();
 }
 
 void MainWindow::refreshProgress(int value)
@@ -168,9 +165,7 @@ void MainWindow::parseFinished(QList<QStringList> parsedList,  QList<QTemporaryF
         tableView->openPersistentEditor( tableModel->index(i, COL_codec) );
     }
     tableView->resizeColumnsToContents();
-
     m_tempMediaFile.append(fileNameList);
-
     m_tempDecodedFile.append(QVector<QTemporaryFile * >(fileNameList.size(), nullptr));
     m_codecVector.append(QVector<int>(fileNameList.size(), -1));
 }
@@ -230,22 +225,28 @@ void MainWindow::startParsing(const QString filePath)
 void MainWindow::pickFile()
 {
     qDebug() << "pickFile action";
+    QSettings settings("jjkkoo", "parsePcap");
+    settings.beginGroup("MainWindow");
+    QString pickDir = settings.value("pickDirectory", QCoreApplication::applicationDirPath()).toString();
 
-    QStringList pathList = QFileDialog::getOpenFileNames(this, tr("Pick Pcap Files"),  pickDir,
-                                                tr("Pcap Files(*.pcap);;All Files(*.*)"));
+    QStringList pathList = QFileDialog::getOpenFileNames(this, tr("Pick Pcap Files"), pickDir, tr("Pcap Files(*.pcap);;All Files(*.*)"));
     qDebug() << pathList;
-    if(!pathList.isEmpty()) {
-        pickDir = QFileInfo(pathList[0]).absolutePath() ;
-        foreach (const QString &str, pathList)
-            startParsing(str);
-
-    } else {
+    if(pathList.isEmpty()) {
         statusBar()->showMessage("Pick Pcap Files Action Cancelled");
+        return;
     }
+
+    foreach (const QString &str, pathList)
+        startParsing(str);
+    settings.setValue("pickDirectory", QFileInfo(pathList[0]).absolutePath());
+    settings.endGroup();
 }
 
 void MainWindow::clearTable()
 {
+    audio->stop();
+    PlayerFile = nullptr;
+    currentSampleRate = 0;
     qDebug() << "clearFile action" << m_tempMediaFile.count() << m_tempDecodedFile.count();
     tableModel->clearData();
 
@@ -319,7 +320,8 @@ void MainWindow::plot()
     qSort(indexList.begin(), indexList.end());
     qDebug() << "index:" << indexList[0] << "codec:" << tableModel->index(indexList[0], COL_codec).data().toInt() << m_tempMediaFile.at(indexList[0])->fileName();
 
-    if (m_tempDecodedFile.at(indexList[0]) == nullptr){
+    if (m_tempDecodedFile.at(indexList[0]) == nullptr or
+            m_codecVector.at(indexList[0]) != tableModel->index(indexList[0], COL_codec).data().toInt()) {
         waitForPlotList.append(indexList[0]);
         startDecoding(indexList[0]);
     }
@@ -364,10 +366,18 @@ void MainWindow::plotOnChart(QList<int>indexList)
     series->replace(points);
     series->setName(QString("index:%1_%2_%3_%4_%5").arg(indexList[0] + 1).arg(tableModel->index(indexList[0], COL_source_ip).data().toString()).arg(tableModel->index(indexList[0], COL_srcPort).data().toString())
             .arg(tableModel->index(indexList[0], COL_dest_ip).data().toString()).arg(tableModel->index(indexList[0], COL_destPort).data().toString()));
-    QPen pen(QRgb("#E6E6FA"));
-    series->setPen(pen);
+    //QPen pen(QRgb("#E6E6FA"));
+    //series->setPen(pen);
     chartView->show();
     mediaDataFile.close();
+    PlayerFile = m_tempDecodedFile.at(indexList.at(0));
+    switch (m_codecVector.at(indexList.at(0))) {
+        case 0:
+        case 2:    currentSampleRate = 8000;    break;
+        case 1:
+        case 3:    currentSampleRate = 16000;   break;
+        default:   currentSampleRate = 8000;
+    }
 }
 
 void MainWindow::exportMedia()
@@ -385,35 +395,57 @@ void MainWindow::exportMedia()
 
    // if(indexList.size() != 0) {
     //    foreach ( const int & index, indexList ) {
-            if (m_tempDecodedFile.at(indexList[0]) == nullptr) {
+            if (m_tempDecodedFile.at(indexList[0]) == nullptr or
+                    m_codecVector.at(indexList[0]) != tableModel->index(indexList[0], COL_codec).data().toInt()) {
                 waitForExportList.append(indexList[0]);
                 startDecoding(indexList[0]);
             }
             else {
-                saveMediaFile(indexList[0]);
+                exportAfterDecode(indexList);
             }
   //      }
    // }
+
 }
 
 void MainWindow::exportAfterDecode(QList<int> indexList)
 {
-    foreach ( const int & index, indexList ) {
-        saveMediaFile(index);
-    }
+    QSettings settings("jjkkoo", "parsePcap");
+
+    settings.beginGroup("MainWindow");
+    QString saveDir = settings.value("saveDirectory", QCoreApplication::applicationDirPath()).toString();
+
+    QString directory = QFileDialog::getExistingDirectory(this, "select export directory", saveDir);
+    if (directory.isEmpty())    return;
+    //qDebug() << directory << directory.isEmpty();
+
+    //foreach ( const int & index, indexList ) {
+        saveMediaFile(indexList[0], directory);
+    //}
+
+    settings.setValue("saveDirectory", directory);
+    settings.endGroup();
 }
 
-void MainWindow::saveMediaFile(int index)
+void MainWindow::saveMediaFile(int index, QString directory)
 {
     //qDebug() << tableModel->getLine(index).join("_").replace(":", " ");
-    QFile file(QString("index%1_%2").arg(index + 1).arg(tableModel->getLine(index).join("_").replace(":", " ")));
+    QString absFilePath = QString("%1//index%2_%3.wav").arg(directory).arg(index + 1).arg(tableModel->getLine(index).join("_").replace(":", " "));
+    QFile file(absFilePath);
     if (!file.open(QIODevice::WriteOnly))    return;
-    qDebug() << file.fileName() << m_codecVector.at(index);
+    //qDebug() << file.fileName() << m_codecVector.at(index);
 
-    quint32 sampleRate = (m_codecVector.at(index) == 0 or m_codecVector.at(index) == 2) ? 8000 : 16000;
+    quint32 sampleRate;
+    switch (m_codecVector.at(index)) {
+        case 0:
+        case 2:    sampleRate = 8000;    break;
+        case 1:
+        case 3:    sampleRate = 16000;   break;
+        default:   sampleRate = 8000;
+    }
     quint32 fileSize = m_tempDecodedFile.at(index)->size();
-    CombinedHeader wavHeader { { {{'R','I','F','F'}, fileSize + 36}, {'W','A','V','E'} } , { {{'f','m','t',' '}, 16}, 1, 1,
-            sampleRate, 2 * sampleRate, 2 ,16} };
+    CombinedHeader wavHeader { { {{'R','I','F','F'}, fileSize + 36}, {'W','A','V','E'} } , { {{'f','m','t',' '}, 16}, 1, 1, sampleRate, 2 * sampleRate, 2 ,16} };
+
     file.write( (char *) &wavHeader, sizeof(CombinedHeader));
     m_tempDecodedFile.at(index)->open();
     file.write(dataConst , 4);
@@ -421,16 +453,85 @@ void MainWindow::saveMediaFile(int index)
     file.write(m_tempDecodedFile.at(index)->readAll());
     m_tempDecodedFile.at(index)->close();
     file.close();
+    statusBar()->showMessage(QString("index%1: %2").arg(index+1).arg(absFilePath));
 }
 
 void MainWindow::play()
 {
     qDebug() << "play action";
+    if (PlayerFile == nullptr)    return;
+    if (audio!=nullptr and audio->state() == QAudio::ActiveState) {
+        audio->suspend();
+    }
+    else if (audio!=nullptr and audio->state() == QAudio::SuspendedState) {
+        audio->resume();
+    }
+    else {
+        PlayerFile->close();
+        PlayerFile->open();
+
+        QAudioFormat format;
+        // Set up the format, eg.
+        format.setSampleRate(currentSampleRate);
+        format.setChannelCount(1);
+        format.setSampleSize(16);
+        format.setCodec("audio/pcm");
+        format.setByteOrder(QAudioFormat::LittleEndian);
+        format.setSampleType(QAudioFormat::UnSignedInt);//?
+
+        QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
+        if (!info.isFormatSupported(format)) {
+            qWarning() << "Raw audio format not supported by backend, cannot play audio.";
+            return;
+        }
+
+        if (audio != nullptr)    delete audio;    //no setFormat ??
+        audio = new QAudioOutput(format, this);
+        connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+        audio->setNotifyInterval(20);
+        connect(audio, SIGNAL(notify()), this, SLOT(playerRefreshProgress()));
+        audio->start(PlayerFile);
+    }
+}
+
+void MainWindow::handleStateChanged(QAudio::State newState)
+{
+    switch (newState) {
+        case QAudio::IdleState:
+            // Finished playing (no more data)
+            audio->stop();
+            PlayerFile->close();
+            delete audio;
+            audio = nullptr;
+            break;
+
+        case QAudio::StoppedState:
+            // Stopped for other reasons
+            if (audio->error() != QAudio::NoError) {
+                PlayerFile->close();
+                delete audio;
+                audio = nullptr;
+            }
+            break;
+
+        default:
+            // ... other cases as appropriate
+            break;
+    }
+}
+void MainWindow::playerRefreshProgress()
+{
+    qDebug() << "20ms";
 }
 
 void MainWindow::stop()
 {
     qDebug() << "stop action";
+    if (audio == nullptr)    return;
+    audio->stop();
+    PlayerFile->close();
+    delete audio;
+    audio = nullptr;
 }
 
 void MainWindow::showPreference()

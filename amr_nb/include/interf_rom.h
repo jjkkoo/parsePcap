@@ -63,6 +63,7 @@ static const UWord8 block_size[16]={ 13, 14, 16, 18, 19, 21, 26, 31,
 #endif
 
 /* Subjective importance of the speech encoded bits */
+/*
 static Word16 order_MR475[] =
 {
    0, 0x80,
@@ -1489,6 +1490,7 @@ static Word16 order_MRDTX[] =
    4, 0x2,
    4, 0x1
 };
+*/
 
 /* Homing frames for the decoder */
 static const Word16 dhf_MR475[PRMNO_MR475] =
