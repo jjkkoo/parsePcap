@@ -410,9 +410,17 @@ void MainWindow::saveMediaFile(int index)
     if (!file.open(QIODevice::WriteOnly))    return;
     qDebug() << file.fileName() << m_codecVector.at(index);
 
-    CombinedHeader wavHeader { { {{'R','I','F','F'}, 1000}, {'W','A','V','E'} } , { {{'f','m','t',' '}, 16}, 1, 1, 8000, 16000, 2 ,16} };
+    quint32 sampleRate = (m_codecVector.at(index) == 0 or m_codecVector.at(index) == 2) ? 8000 : 16000;
+    quint32 fileSize = m_tempDecodedFile.at(index)->size();
+    CombinedHeader wavHeader { { {{'R','I','F','F'}, fileSize + 36}, {'W','A','V','E'} } , { {{'f','m','t',' '}, 16}, 1, 1,
+            sampleRate, 2 * sampleRate, 2 ,16} };
     file.write( (char *) &wavHeader, sizeof(CombinedHeader));
-   // file.write();
+    m_tempDecodedFile.at(index)->open();
+    file.write(dataConst , 4);
+    file.write((char *) &fileSize, 4);
+    file.write(m_tempDecodedFile.at(index)->readAll());
+    m_tempDecodedFile.at(index)->close();
+    file.close();
 }
 
 void MainWindow::play()

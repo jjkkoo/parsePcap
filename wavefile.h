@@ -3,6 +3,7 @@
 
 #include <QObject>
 
+const char dataConst[4] {'d','a','t','a'};
 struct chunk
 {
     char        id[4];
