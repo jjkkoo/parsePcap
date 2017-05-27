@@ -31,7 +31,7 @@ void DecodeThread::run()
     if (codec == 0) {// or codec == 1) {
         FILE *f_serial;                        /* File of serial bits for transmission  */
         Word16 synth[160];              /* Buffer for speech @ 8kHz             */
-        UWord8 serial[32], pktBuffer[32];
+        UWord8 serial[32], pktBuffer[32 * 12];
         Word32 frame;
         void *st;
         unsigned char FTList[12], FTCount;    //max number of amr frame in one packet 12
@@ -52,7 +52,7 @@ void DecodeThread::run()
             FTCount = 0;
             bytePtr = 0;
             currentFTptr = 4;
-            if (fread(pktBuffer, sizeof (UWord8), pktLen, f_serial )==0){     //read whole packet
+            if (fread(pktBuffer, sizeof (UWord8), pktLen, f_serial )!=pktLen){     //read whole packet
                 qDebug() << "error reading packets";
                 break;
             }
@@ -68,7 +68,7 @@ void DecodeThread::run()
                     FTList[FTCount++] = ( (pktBuffer[bytePtr] << (currentFTptr - 3)) & 0x0f ) | ( pktBuffer[bytePtr + 1] >> (11 - currentFTptr));
                 }
                 else if (currentFTptr <= 3) {
-                    FTList[FTCount++] = ( pktBuffer[bytePtr] >> (4 - currentFTptr)) & 0x0f;
+                    FTList[FTCount++] = ( pktBuffer[bytePtr] >> (3 - currentFTptr)) & 0x0f;
                 }
                 else if (currentFTptr == 7){
                     FTList[FTCount++] = ( pktBuffer[bytePtr + 1] >> 4) & 0x0f;
@@ -99,23 +99,25 @@ void DecodeThread::run()
             bytePtr = bytePtr + currentFTptr / 8;
             currentFTptr %= 8;
 
+            qDebug() << "FTCount:" << FTCount;
             /* for each amr data in each pkt, decode follow FT indicate */
             for (int i=0; i<FTCount; ++i) {
+                qDebug() << FTList[i];
                 serial[0] = FTList[i] << 3 | 0x4;
                 int serialByteLen = qCeil(amr_nb_nob[FTList[i]] / 8.0);    //useful amr data len in bytes
                 int serialByteMod = amr_nb_nob[FTList[i]] % 8;             //last amr data byte, bit len
                 for( int j = 1; j <= serialByteLen and bytePtr < pktLen; ++j, ++bytePtr) {
                     if (j < serialByteLen) {
-                        if (currentFTptr == 7) {
-                            serial[j] = pktBuffer[bytePtr + 1];
+                        if (currentFTptr == 0) {
+                            serial[j] = pktBuffer[bytePtr];
                         }
                         else {
                             serial[j] = pktBuffer[bytePtr]<<currentFTptr | pktBuffer[bytePtr + 1]>>(8 - currentFTptr);
                         }
                     }
                     else {    //last byte
-                        if (currentFTptr == 7) {
-                            serial[j] = pktBuffer[bytePtr + 1];// & 0xff << (8 - serialByteMod);
+                        if (currentFTptr == 0) {
+                            serial[j] = pktBuffer[bytePtr] & 0xff << (8 - serialByteMod);
                         }
                         else {
                             serial[j] = pktBuffer[bytePtr]<<currentFTptr;// & 0xff<<(8 - serialByteMod);
@@ -123,11 +125,11 @@ void DecodeThread::run()
                     }
                 }
                 currentFTptr = (currentFTptr + serialByteMod) % 8;
+                if (currentFTptr != 0)    --bytePtr;
+                frame++;
+                Decoder_Interface_Decode(st, serial, synth, 0);
+                decodeResult->write((char *)synth, 160 * 2);
             }
-            frame++;
-
-            Decoder_Interface_Decode(st, serial, synth, 0);
-            decodeResult->write((char *)synth, 160 * 2);
         }
 
         Decoder_Interface_exit(st);
@@ -138,10 +140,10 @@ void DecodeThread::run()
         qDebug() << frame;
 
     }
-    else if (codec == 1) {// or codec == 4) {
+    else if (codec == 1 or codec == 3) {
         FILE *f_serial;                        /* File of serial bits for transmission  */
         Word16 synth[L_FRAME16k];              /* Buffer for speech @ 16kHz             */
-        UWord8 serial[NB_SERIAL_MAX], pktBuffer[NB_SERIAL_MAX];
+        UWord8 serial[NB_SERIAL_MAX], pktBuffer[NB_SERIAL_MAX * 12];
         Word32 frame;
         void *st;
         unsigned char FTList[12], FTCount;    //max number of amr frame in one packet 12
@@ -166,82 +168,99 @@ void DecodeThread::run()
             FTCount = 0;
             bytePtr = 0;
             currentFTptr = 4;
-            if (fread(pktBuffer, sizeof (UWord8), pktLen, f_serial )==0){     //read whole packet
+            if (fread(pktBuffer, sizeof (UWord8), pktLen, f_serial )!=pktLen){     //read whole packet
                 qDebug() << "error reading packets";
                 break;
             }
             /* get all FT into an array, max len 12 */
             while (FTCount < 12 and bytePtr < pktLen) {
-                if(currentFTptr > 3 and currentFTptr < 7) {
-                    FTList[FTCount++] =  ((pktBuffer[bytePtr] << (currentFTptr - 3)) & 0x0f) | ( pktBuffer[bytePtr + 1] >> (11 - currentFTptr));
-                }
-                else if (currentFTptr <= 3) {
-                    FTList[FTCount++] = ( pktBuffer[bytePtr] >> (4 - currentFTptr)) & 0x0f;
-                }
-                else if (currentFTptr == 7){
-                    FTList[FTCount++] = ( pktBuffer[bytePtr + 1] >> 4) & 0x0f;
-                }
-
-                //qDebug() << pktBuffer[bytePtr] << " " << (0x1 << (7-currentFTptr));
-                if ((pktBuffer[bytePtr] & (0x1 << (7-currentFTptr))) == 0)
-                    break;
-                else {
-                    currentFTptr += 6;
-                    if (currentFTptr > 7) {
-
+                if (codec == 1) {
+                    if(currentFTptr > 3 and currentFTptr < 7) {
+                        FTList[FTCount++] =  ((pktBuffer[bytePtr] << (currentFTptr - 3)) & 0x0f) | ( pktBuffer[bytePtr + 1] >> (11 - currentFTptr));
                     }
+                    else if (currentFTptr <= 3) {
+                        FTList[FTCount++] = ( pktBuffer[bytePtr] >> (3 - currentFTptr)) & 0x0f;
+                    }
+                    else if (currentFTptr == 7){
+                        FTList[FTCount++] = ( pktBuffer[bytePtr + 1] >> 4) & 0x0f;
+                    }
+    
+                    //qDebug() << pktBuffer[bytePtr] << " " << (0x1 << (7-currentFTptr));
+                    if ((pktBuffer[bytePtr] & (0x1 << (7-currentFTptr))) == 0)
+                        break;
                     else {
-                        if (currentFTptr == 7){
-                            FTList[FTCount++] = ( pktBuffer[bytePtr + 1] >> 4) & 0x0f;
+                        currentFTptr += 6;
+                        if (currentFTptr > 7) {
+    
                         }
                         else {
-                            FTList[FTCount++] = ( (pktBuffer[bytePtr] << (currentFTptr - 3)) & 0x0f ) | ( pktBuffer[bytePtr + 1] >> (11 - currentFTptr));
+                            if (currentFTptr == 7){
+                                FTList[FTCount++] = ( pktBuffer[bytePtr + 1] >> 4) & 0x0f;
+                            }
+                            else {
+                                FTList[FTCount++] = ( (pktBuffer[bytePtr] << (currentFTptr - 3)) & 0x0f ) | ( pktBuffer[bytePtr + 1] >> (11 - currentFTptr));
+                            }
+                            currentFTptr += 6;
                         }
-                        currentFTptr += 6;
+                        currentFTptr %= 8;
+                        ++bytePtr;
                     }
+                    currentFTptr += 6;
+                    bytePtr = bytePtr + currentFTptr / 8;
                     currentFTptr %= 8;
-                    ++bytePtr;
+                }
+                else if (codec == 3) {
+                    FTList[FTCount++] =  (pktBuffer[++bytePtr] >> 3) & 0x0f;
+                    if ((pktBuffer[bytePtr] & 0x80) == 0) {
+                        break;
+                    }
                 }
             }
-            currentFTptr += 6;
-            bytePtr = bytePtr + currentFTptr / 8;
-            currentFTptr %= 8;
-
+            if (codec == 3) {
+                currentFTptr = 0;
+                ++bytePtr;
+            }
+            qDebug() << "FTCount:" << FTCount;
             /* for each amr data in each pkt, decode follow FT indicate */
+
             for (int i=0; i<FTCount; ++i) {
+                qDebug() << FTList[i];
                 serial[0] = FTList[i] << 3 | 0x4;
                 int serialByteLen = qCeil(amr_wb_nob[FTList[i]] / 8.0);    //useful amr data len in bytes
                 int serialByteMod = amr_wb_nob[FTList[i]] % 8;             //last amr data byte, bit len
                 for( int j = 1; j <= serialByteLen and bytePtr < pktLen; ++j, ++bytePtr) {
                     if (j < serialByteLen) {
-                        if (currentFTptr == 7) {
-                            serial[j] = pktBuffer[bytePtr + 1];
+                        if (currentFTptr == 0) {
+                            serial[j] = pktBuffer[bytePtr];
                         }
                         else {
                             serial[j] = pktBuffer[bytePtr]<<currentFTptr | pktBuffer[bytePtr + 1]>>(8 - currentFTptr);
                         }
                     }
                     else {    //last byte
-                        if (currentFTptr == 7) {
-                            serial[j] = pktBuffer[bytePtr + 1];// & 0xff << (8 - serialByteMod);
+                        if (currentFTptr == 0) {
+                            serial[j] = pktBuffer[bytePtr] & 0xff << (8 - serialByteMod);
                         }
                         else {
                             serial[j] = pktBuffer[bytePtr]<<currentFTptr;// & 0xff<<(8 - serialByteMod);
                         }
                     }
                 }
-                currentFTptr = (currentFTptr + serialByteMod) % 8;
+                if (codec == 1) {
+                    currentFTptr = (currentFTptr + serialByteMod) % 8;
+                    if (currentFTptr != 0)    --bytePtr;
+                }
+                frame++;
+                D_IF_decode( st, serial, synth, _good_frame);
+                decodeResult->write((char *)synth, L_FRAME16k * 2);
             }
-            frame++;
-            D_IF_decode( st, serial, synth, _good_frame);
-            decodeResult->write((char *)synth, L_FRAME16k * 2);
         }
 
         D_IF_exit(st);
         fclose(f_serial);
         decodeResult->close();
         qDebug() << decodeResult->fileName();
-        qDebug() << frame;
+        qDebug() << "total frame :" << frame;
     }
 
 //qDebug() << QDateTime::currentDateTime();
