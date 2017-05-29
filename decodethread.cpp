@@ -141,10 +141,6 @@ void DecodeThread::run()
                     if (currentFTptr == 0) {
                         serial[j] = pktBuffer[bytePtr];
                     }
-    
-                    //qDebug() << pktBuffer[bytePtr] << " " << (0x1 << (7-currentFTptr));
-                    if ((pktBuffer[bytePtr] & (0x1 << (7-currentFTptr))) == 0)
-                        break;
                     else {
                         serial[j] = pktBuffer[bytePtr]<<currentFTptr | pktBuffer[bytePtr + 1]>>(8 - currentFTptr);
                     }
