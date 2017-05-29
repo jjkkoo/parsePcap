@@ -33,7 +33,8 @@ SOURCES += main.cpp\
     chartview.cpp \
     decodethread.cpp \
     tabdialog.cpp \
-    dialogmodel.cpp
+    dialogmodel.cpp \
+    progressline.cpp
 
 HEADERS  += mainwindow.h \
     customtablemodel.h \
@@ -44,5 +45,6 @@ HEADERS  += mainwindow.h \
     decodethread.h \
     tabdialog.h \
     dialogmodel.h \
-    wavefile.h
+    wavefile.h \
+    progressline.h
 

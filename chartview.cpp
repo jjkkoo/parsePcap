@@ -3,9 +3,11 @@
 #include <QtGui/QMouseEvent>
 
 ChartView::ChartView(QChart *chart, QWidget *parent) :
-    QChartView(chart, parent), m_isTouching(false), m_dataLength{0}, zoomInfoList{{0,0,0}}
+    QChartView(chart, parent), m_isTouching(false), m_dataLength{0}, zoomInfoList{{0,0,0,0}},
+            progressLine(new ProgressLine(this))
 {
     setRubberBand(QChartView::RectangleRubberBand);
+
 }
 
 void ChartView::setZoomInfo(zoomInfo zi) {
@@ -16,30 +18,44 @@ zoomInfo ChartView::getZoomInfo(int index) {
     return zoomInfoList.at(index);
 }
 
-
-//void ChartView::setDataLength(int dataLen) {
-//    m_dataLength[0] = dataLen;
-//}
-
-//int ChartView::getDataLength(int index){
-//    return m_dataLength.at(index);
-//}
-
-bool ChartView::viewportEvent(QEvent *event)
-{
-    if (event->type() == QEvent::TouchBegin) {
-        // By default touch events are converted to mouse events. So
-        // after this event we will get a mouse event also but we want
-        // to handle touch events as gestures only. So we need this safeguard
-        // to block mouse events that are actually generated from touch.
-        m_isTouching = true;
-
-        // Turn off animations when handling gestures they
-        // will only slow us down.
-        chart()->setAnimationOptions(QChart::NoAnimation);
-    }
-    return QChartView::viewportEvent(event);
+void ChartView::resizeEvent(QResizeEvent *event){
+    chart()->resize(event->size());
+    progressLine->setGeometry(chart()->plotArea().toRect());
+    PLWidth = chart()->plotArea().toRect().width();
+    progressLine->update();
 }
+
+void ChartView::refreshProgress(double progress)
+{
+    if (progress > 1)    progress = 1;
+        //qDebug() << progress << " " << chart()->plotArea().toRect().width();
+        progressLine->setPosition(progress * PLWidth);
+        progressLine->update();
+}
+
+void ChartView::setDataLength(int dataLen) {
+    m_dataLength[0] = dataLen;
+}
+
+int ChartView::getDataLength(int index){
+    return m_dataLength.at(index);
+}
+
+//bool ChartView::viewportEvent(QEvent *event)
+//{
+//    if (event->type() == QEvent::TouchBegin) {
+//        // By default touch events are converted to mouse events. So
+//        // after this event we will get a mouse event also but we want
+//        // to handle touch events as gestures only. So we need this safeguard
+//        // to block mouse events that are actually generated from touch.
+//        m_isTouching = true;
+
+//        // Turn off animations when handling gestures they
+//        // will only slow us down.
+//        chart()->setAnimationOptions(QChart::NoAnimation);
+//    }
+//    return QChartView::viewportEvent(event);
+//}
 
 void ChartView::wheelEvent(QWheelEvent *event)
 {
@@ -93,14 +109,14 @@ void ChartView::mousePressEvent(QMouseEvent *event)
 
     if (m_isTouching)
         return;
-    QChartView::mousePressEvent(event);
+    //QChartView::mousePressEvent(event);
 }
 
 void ChartView::mouseMoveEvent(QMouseEvent *event)
 {
     if (m_isTouching)
         return;
-    QChartView::mouseMoveEvent(event);
+    //QChartView::mouseMoveEvent(event);
 }
 
 void ChartView::mouseReleaseEvent(QMouseEvent *event)
@@ -112,7 +128,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event)
     // we must put them back on.
     chart()->setAnimationOptions(QChart::SeriesAnimations);
 
-    QChartView::mouseReleaseEvent(event);
+    //QChartView::mouseReleaseEvent(event);
 }
 
 void ChartView::keyPressEvent(QKeyEvent *event)
@@ -141,3 +157,4 @@ void ChartView::keyPressEvent(QKeyEvent *event)
         break;
     }
 }
+

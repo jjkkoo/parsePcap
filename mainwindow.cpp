@@ -371,6 +371,7 @@ void MainWindow::plotOnChart(QList<int>indexList)
     chartView->show();
     mediaDataFile.close();
     PlayerFile = m_tempDecodedFile.at(indexList.at(0));
+    currentFileSize = PlayerFile->size();
     switch (m_codecVector.at(indexList.at(0))) {
         case 0:
         case 2:    currentSampleRate = 8000;    break;
@@ -488,7 +489,7 @@ void MainWindow::play()
         if (audio != nullptr)    delete audio;    //no setFormat ??
         audio = new QAudioOutput(format, this);
         connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
-        audio->setNotifyInterval(20);
+        audio->setNotifyInterval(200);
         connect(audio, SIGNAL(notify()), this, SLOT(playerRefreshProgress()));
         audio->start(PlayerFile);
     }
@@ -521,7 +522,10 @@ void MainWindow::handleStateChanged(QAudio::State newState)
 }
 void MainWindow::playerRefreshProgress()
 {
-    qDebug() << "20ms";
+    //qDebug() << audio->processedUSecs();
+    //qDebug() << audio->periodSize();
+    //qDebug() << 1.0 * audio->processedUSecs() / 1000000 / (currentFileSize / (2 * 16000));
+    chartView->refreshProgress(1.0 * audio->processedUSecs() / 1000000 / (currentFileSize / (2 * currentSampleRate)));
 }
 
 void MainWindow::stop()
@@ -648,4 +652,10 @@ void MainWindow::dropEvent(QDropEvent *event)
     qDebug() << fileName;
     startParsing(fileName);
 
+    QSettings settings("jjkkoo", "parsePcap");
+    settings.beginGroup("MainWindow");
+    settings.setValue("pickDirectory", QFileInfo(fileName).absolutePath());
+    settings.endGroup();
 }
+
+

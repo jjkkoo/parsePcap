@@ -41,6 +41,7 @@ QT_END_NAMESPACE
 #include "tabdialog.h"
 #include "wavefile.h"
 
+
 //QT_CHARTS_USE_NAMESPACE
 
 
@@ -133,6 +134,8 @@ private:
     QTemporaryFile *PlayerFile;
     QAudioOutput *audio;
     int currentSampleRate;
+    unsigned int currentFileSize;
+
 };
 
 #endif
