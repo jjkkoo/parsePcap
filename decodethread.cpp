@@ -6,6 +6,14 @@ DecodeThread::DecodeThread(QTemporaryFile *decodeFile, int codec, QObject *paren
     m_abort(false), decodeFile(decodeFile), codec(codec)
 {
     qDebug() << "Decoder construct Thread : " << QThread::currentThreadId() << "," << "decodeFileName:" << decodeFile << "," << "codec:" << codec;
+    if (codec == 0 or codec == 2) {
+        paddingDataLen = 320;
+        FTsilent = 8;
+    }
+    else if (codec == 1 or codec == 3) {
+        paddingDataLen = 640;
+        FTsilent = 9;
+    }
 }
 
 DecodeThread::~DecodeThread()
@@ -30,7 +38,7 @@ void DecodeThread::run()
     unsigned int frame = 0;
     unsigned int currentProgress = 0;
     void *st;
-    unsigned char FTList[12], FTCount;    //max number of amr frame in one packet 12
+    unsigned char FTList[12], FTCount;    //max number of amr frame in one packet: 12
     unsigned short pktLen;                //current packet length
     unsigned char currentFTptr = 4;       //FT pointer and amr data pointer
     unsigned int bytePtr = 0;             //current byte pointer
@@ -126,45 +134,53 @@ void DecodeThread::run()
         /* for each amr data in each pkt, decode follow FT indicate */
         for (int i=0; i<FTCount; ++i) {
             //qDebug() << FTList[i];
-            serial[0] = FTList[i] << 3 | 0x4;
-            int serialByteLen, serialByteMod;
-            if (codec == 1 or codec == 3) {
-                serialByteLen = qCeil(amr_wb_nob[FTList[i]] / 8.0);    //useful amr data len in bytes
-                serialByteMod = amr_wb_nob[FTList[i]] % 8;             //last amr data byte, bit len
-            }
-            else if (codec == 0 or codec == 2) {
-                serialByteLen = qCeil(amr_nb_nob[FTList[i]] / 8.0);    //useful amr data len in bytes
-                serialByteMod = amr_nb_nob[FTList[i]] % 8;             //last amr data byte, bit len
-            }
-            for( int j = 1; j <= serialByteLen and bytePtr < pktLen; ++j, ++bytePtr) {
-                if (j < serialByteLen) {
-                    if (currentFTptr == 0) {
-                        serial[j] = pktBuffer[bytePtr];
+            if (FTList[i] < FTsilent) {
+                serial[0] = FTList[i] << 3 | 0x4;
+                int serialByteLen, serialByteMod;
+                if (codec == 1 or codec == 3) {
+                    serialByteLen = qCeil(amr_wb_nob[FTList[i]] / 8.0);    //useful amr data len in bytes
+                    serialByteMod = amr_wb_nob[FTList[i]] % 8;             //last amr data byte, bit len
+                }
+                else if (codec == 0 or codec == 2) {
+                    serialByteLen = qCeil(amr_nb_nob[FTList[i]] / 8.0);    //useful amr data len in bytes
+                    serialByteMod = amr_nb_nob[FTList[i]] % 8;             //last amr data byte, bit len
+                }
+                for( int j = 1; j <= serialByteLen and bytePtr < pktLen; ++j, ++bytePtr) {
+                    if (j < serialByteLen) {
+                        if (currentFTptr == 0) {
+                            serial[j] = pktBuffer[bytePtr];
+                        }
+                        else {
+                            serial[j] = pktBuffer[bytePtr]<<currentFTptr | pktBuffer[bytePtr + 1]>>(8 - currentFTptr);
+                        }
                     }
-                    else {
-                        serial[j] = pktBuffer[bytePtr]<<currentFTptr | pktBuffer[bytePtr + 1]>>(8 - currentFTptr);
+                    else {    //last byte
+                        if (currentFTptr == 0) {
+                            serial[j] = pktBuffer[bytePtr] & 0xff << (8 - serialByteMod);
+                        }
+                        else {
+                            serial[j] = pktBuffer[bytePtr]<<currentFTptr;// & 0xff<<(8 - serialByteMod);
+                        }
                     }
                 }
-                else {    //last byte
-                    if (currentFTptr == 0) {
-                        serial[j] = pktBuffer[bytePtr] & 0xff << (8 - serialByteMod);
-                    }
-                    else {
-                        serial[j] = pktBuffer[bytePtr]<<currentFTptr;// & 0xff<<(8 - serialByteMod);
-                    }
+                if (codec == 0 or codec == 1) {    //for bandwidth efficient
+                    currentFTptr = (currentFTptr + serialByteMod) % 8;
+                    if (currentFTptr != 0)    --bytePtr;
                 }
-            }
-            if (codec == 0 or codec == 1) {    //for bandwidth efficient
-                currentFTptr = (currentFTptr + serialByteMod) % 8;
-                if (currentFTptr != 0)    --bytePtr;
-            }
-            frame++;
-            if (codec == 0 or codec == 2)
-                Decoder_Interface_Decode(st, serial, synth, 0);
-            else if (codec == 1 or codec ==3)
-                D_IF_decode( st, serial, synth, _good_frame);
+                frame++;
+                if (codec == 0 or codec == 2)
+                    Decoder_Interface_Decode(st, serial, synth, 0);
+                else if (codec == 1 or codec ==3)
+                    D_IF_decode( st, serial, synth, _good_frame);
 
-            decodeResult->write((char *)synth, synthLen * 2);
+                decodeResult->write((char *)synth, synthLen * 2);
+            }
+        else if (FTList[i] == FTsilent) {
+            decodeResult->write(QByteArray(paddingDataLen * 8 , 0));
+            }
+        else if (FTList[i] > FTsilent) {
+            decodeResult->write(QByteArray(paddingDataLen , 0));
+            }
         }
     }
 

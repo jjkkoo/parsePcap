@@ -83,6 +83,8 @@ private:
     QMutex mutex;
     QTemporaryFile *decodeFile;
     int codec;
+    int paddingDataLen;
+    int FTsilent;
     //QTemporaryFile * decodeResult;
 };
 

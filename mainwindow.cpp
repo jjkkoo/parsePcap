@@ -244,7 +244,10 @@ void MainWindow::pickFile()
 
 void MainWindow::clearTable()
 {
-    audio->stop();
+    if (audio != nullptr) {
+        audio->stop();
+        audio = nullptr;
+    }
     PlayerFile = nullptr;
     currentSampleRate = 0;
     qDebug() << "clearFile action" << m_tempMediaFile.count() << m_tempDecodedFile.count();
@@ -312,6 +315,7 @@ void MainWindow::plot()
     qDebug() << "plot action";
     QItemSelectionModel * selection = tableView->selectionModel();
     QModelIndexList indexes = selection->selectedIndexes();
+    if (indexes.size() <= 0)    return;
     QSet<int> indexRowSet;
     foreach(const QModelIndex& index, indexes){
         indexRowSet.insert(index.row());
@@ -366,8 +370,13 @@ void MainWindow::plotOnChart(QList<int>indexList)
     series->replace(points);
     series->setName(QString("index:%1_%2_%3_%4_%5").arg(indexList[0] + 1).arg(tableModel->index(indexList[0], COL_source_ip).data().toString()).arg(tableModel->index(indexList[0], COL_srcPort).data().toString())
             .arg(tableModel->index(indexList[0], COL_dest_ip).data().toString()).arg(tableModel->index(indexList[0], COL_destPort).data().toString()));
-    //QPen pen(QRgb("#E6E6FA"));
-    //series->setPen(pen);
+    QPen pen(QColor("#607B8B"));    //LightSkyBlue4
+    series->setPen(pen);
+    if (audio != nullptr) {
+        audio->stop();
+        audio = nullptr;
+    }
+    chartView->refreshProgress(0);
     chartView->show();
     mediaDataFile.close();
     PlayerFile = m_tempDecodedFile.at(indexList.at(0));
@@ -386,6 +395,7 @@ void MainWindow::exportMedia()
     qDebug() << "exportMedia action";
     QItemSelectionModel * selection = tableView->selectionModel();
     QModelIndexList indexes = selection->selectedIndexes();
+    if (indexes.size() <= 0)    return;
     QSet<int> indexRowSet;
     foreach(const QModelIndex& index, indexes){
         indexRowSet.insert(index.row());
@@ -472,7 +482,6 @@ void MainWindow::play()
         PlayerFile->open();
 
         QAudioFormat format;
-        // Set up the format, eg.
         format.setSampleRate(currentSampleRate);
         format.setChannelCount(1);
         format.setSampleSize(16);
@@ -489,7 +498,7 @@ void MainWindow::play()
         if (audio != nullptr)    delete audio;    //no setFormat ??
         audio = new QAudioOutput(format, this);
         connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
-        audio->setNotifyInterval(200);
+        audio->setNotifyInterval(150);
         connect(audio, SIGNAL(notify()), this, SLOT(playerRefreshProgress()));
         audio->start(PlayerFile);
     }
