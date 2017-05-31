@@ -4,7 +4,8 @@
 #include "mainwindow.h"
 
 MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
- m_tempDecodedFile(QVector<QTemporaryFile *>()), m_codecVector(QVector<int>()), PlayerFile(nullptr), audio(nullptr)
+    m_tempDecodedFile(QVector<QTemporaryFile *>()), m_codecVector(QVector<int>()),
+    currentPlotIndex(-1),PlayerFile(nullptr), audio(nullptr)//, m_output(0), m_pushTimer(new QTimer(this))
 {
     QWidget *widget = new QWidget;
     setCentralWidget(widget);
@@ -324,16 +325,19 @@ void MainWindow::plot()
     qSort(indexList.begin(), indexList.end());
     qDebug() << "index:" << indexList[0] << "codec:" << tableModel->index(indexList[0], COL_codec).data().toInt() << m_tempMediaFile.at(indexList[0])->fileName();
 
-    if (m_tempDecodedFile.at(indexList[0]) == nullptr or
-            m_codecVector.at(indexList[0]) != tableModel->index(indexList[0], COL_codec).data().toInt()) {
-        waitForPlotList.append(indexList[0]);
-        startDecoding(indexList[0]);
+    if (currentPlotIndex == indexList[0]) {
+        //todo: reset zooming
     }
-
     else {
-        plotOnChart(indexList);
+        if (m_tempDecodedFile.at(indexList[0]) == nullptr or
+            m_codecVector.at(indexList[0]) != tableModel->index(indexList[0], COL_codec).data().toInt()) {
+            waitForPlotList.append(indexList[0]);
+            startDecoding(indexList[0]);
+        }
+        else {
+            plotOnChart(indexList);
+        }
     }
-
 }
 
 void MainWindow::plotOnChart(QList<int>indexList)
@@ -379,6 +383,7 @@ void MainWindow::plotOnChart(QList<int>indexList)
     chartView->refreshProgress(0);
     chartView->show();
     mediaDataFile.close();
+    currentPlotIndex = indexList.at(0);
     PlayerFile = m_tempDecodedFile.at(indexList.at(0));
     currentFileSize = PlayerFile->size();
     switch (m_codecVector.at(indexList.at(0))) {
@@ -496,13 +501,33 @@ void MainWindow::play()
         }
 
         if (audio != nullptr)    delete audio;    //no setFormat ??
-        audio = new QAudioOutput(format, this);
+        audio = new QAudioOutput( format, this);
         connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+//        connect(m_pushTimer, SIGNAL(timeout()), this, SLOT(pushTimerExpired()));
         audio->setNotifyInterval(150);
         connect(audio, SIGNAL(notify()), this, SLOT(playerRefreshProgress()));
         audio->start(PlayerFile);
+//        audio->stop();
+//        m_output = audio->start();
+//        m_pushTimer->start(20);
     }
 }
+
+//void MainWindow::pushTimerExpired()
+//{
+//    if (audio && audio->state() != QAudio::StoppedState) {
+//        qDebug() <<"bytesFree:"<< audio->bytesFree() << " periodSize:" << audio->periodSize();
+//        int chunks = audio->bytesFree()/audio->periodSize();
+//        while (chunks) {
+//           const qint64 len = PlayerFile->read(m_buffer, audio->periodSize());
+//           if (len)
+//               m_output->write(m_buffer, len);
+//           if (len != audio->periodSize())
+//               break;
+//           --chunks;
+//        }
+//    }
+//}
 
 void MainWindow::handleStateChanged(QAudio::State newState)
 {

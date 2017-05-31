@@ -84,6 +84,7 @@ private slots:
     void copySelection();
     void playerRefreshProgress();
     void handleStateChanged(QAudio::State newState);
+//    void pushTimerExpired();
 
 private:
     void createActions();
@@ -131,11 +132,15 @@ private:
     QList<int> waitForPlotList;
     QList<int> waitForExportList;
 
+    int currentPlotIndex;
     QTemporaryFile *PlayerFile;
     QAudioOutput *audio;
     int currentSampleRate;
     unsigned int currentFileSize;
 
+//    QIODevice *m_output;
+//    QTimer *m_pushTimer;
+//    char m_buffer[16000/50 * 2];
 };
 
 #endif

@@ -55,16 +55,19 @@ GeneralTab::GeneralTab(QWidget *parent)
     QString filterString = settings.value("filterString", "ip and udp and udp[8]=0x80 or ip6 and udp").toString();
     settings.endGroup();
 
-    QLabel *fileNameLabel = new QLabel(tr("Payload Type:"));
+    QLabel *fileNameLabel = new QLabel(tr("pkt filter: appropriate filter could make parsing very efficient"));
     fileNameEdit = new QLineEdit(filterString);
 
     QLabel *bpsLinK = new QLabel(tr("<a href=\"https://www.winpcap.org/docs/docs_40_2/html/group__language.html\">Filtering expression syntax"));
     bpsLinK->setOpenExternalLinks(true);
 
+    QLabel * egLabe = new QLabel(tr("default:    ip and udp and udp[8]=0x80 or ip6 and udp\nuniversal: ip or ip6\nspecific:    ip and udp src port 31038"
+                                    "\n                 ip src host 10.10.73.8"));
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(fileNameLabel);
     mainLayout->addWidget(fileNameEdit);
     mainLayout->addWidget(bpsLinK);
+    mainLayout->addWidget(egLabe);
 
     mainLayout->addStretch(1);
     setLayout(mainLayout);

@@ -29,7 +29,7 @@ void ChartView::refreshProgress(double progress)
 {
     if (progress > 1)    progress = 1;
         //qDebug() << progress << " " << chart()->plotArea().toRect().width();
-        progressLine->setPosition(progress * PLWidth);
+        progressLine->setPos(progress * PLWidth);
         progressLine->update();
 }
 
@@ -109,6 +109,10 @@ void ChartView::mousePressEvent(QMouseEvent *event)
 
     if (m_isTouching)
         return;
+    if (event->button() == Qt::LeftButton) {
+        progressLine->setStartPos(progressLine->mapFromGlobal(event->globalPos()).x());
+        progressLine->update();
+    }
     //QChartView::mousePressEvent(event);
 }
 

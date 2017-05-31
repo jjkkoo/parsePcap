@@ -73,7 +73,7 @@ void ParseThread::run()
                             errbuf          // error buffer
                             ) != 0)
     {
-        fprintf(stderr,"\nError creating a source string\n");
+        emit lastWords("winpcap error creating a source string");
         return;
     }
 
@@ -87,7 +87,7 @@ void ParseThread::run()
                          errbuf         // error buffer
                          ) ) == NULL)
     {
-        fprintf(stderr,"\nUnable to open the file %s.\n", source);
+        emit lastWords("Unable to open the file! " + pcapFileName);
         return;
     }
 
@@ -98,7 +98,7 @@ void ParseThread::run()
     else if (dl_type == DLT_RAW)
         dl_len = 0;
     else {
-        fprintf(stderr,"\nThis program works only on Ethernet networks.\n");
+        emit lastWords("this program process Ethernet and raw datalink");
         return;
     }
 
@@ -114,8 +114,7 @@ void ParseThread::run()
     //set the filter
     if (pcap_setfilter(fp, &fcode)<0)
     {
-        fprintf(stderr,"\nError setting the filter.\n");
-        /* Free the device list */
+        emit lastWords("Error setting the filter");
         return;
     }
 
@@ -142,7 +141,7 @@ void ParseThread::run()
                          errbuf         // error buffer
                          ) ) == NULL)
     {
-        fprintf(stderr,"\nUnable to open the file %s.\n", source);
+        emit lastWords("Unable to open the file! " + pcapFileName);
         return;
     }
 
@@ -150,8 +149,7 @@ void ParseThread::run()
     //set the filter
     if (pcap_setfilter(fp, &fcode)<0)
     {
-        fprintf(stderr,"\nError setting the filter.\n");
-        /* Free the device list */
+        emit lastWords("Error setting the filter");
         return;
     }
 
