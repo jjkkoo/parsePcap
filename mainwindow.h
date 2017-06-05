@@ -83,8 +83,9 @@ private slots:
     void cancelAll();
     void copySelection();
     void playerRefreshProgress();
-    void handleStateChanged(QAudio::State newState);
-//    void pushTimerExpired();
+//    void handleStateChanged(QAudio::State newState);
+    void pushTimerExpired();
+    void updatePlayfilePos(double posPercent);
 
 private:
     void createActions();
@@ -137,10 +138,12 @@ private:
     QAudioOutput *audio;
     int currentSampleRate;
     unsigned int currentFileSize;
+    unsigned int currentPlayPos;
+    unsigned int startPlayPos;
 
-//    QIODevice *m_output;
-//    QTimer *m_pushTimer;
-//    char m_buffer[16000/50 * 2];
+    QIODevice *m_output;
+    QTimer *m_pushTimer;
+    char m_buffer[32768];//16000/50 * 2];
 };
 
 #endif

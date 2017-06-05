@@ -22,6 +22,8 @@ typedef struct zoomInfo {
 
 class ChartView : public QChartView
 {
+    Q_OBJECT
+
 public:
     ChartView(QChart *chart, QWidget *parent = 0);
     void setDataLength(int dataLen);
@@ -30,6 +32,8 @@ public:
     zoomInfo getZoomInfo(int index);
     void refreshProgress(double progress);
 
+signals:
+    void updateStartPosFromClick(double posPercent);
 
 protected:
     void resizeEvent(QResizeEvent *event);

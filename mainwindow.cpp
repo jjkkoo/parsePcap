@@ -5,7 +5,7 @@
 
 MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
     m_tempDecodedFile(QVector<QTemporaryFile *>()), m_codecVector(QVector<int>()),
-    currentPlotIndex(-1),PlayerFile(nullptr), audio(nullptr)//, m_output(0), m_pushTimer(new QTimer(this))
+    currentPlotIndex(-1),PlayerFile(nullptr), audio(nullptr), m_output(0), m_pushTimer(new QTimer(this))
 {
     QWidget *widget = new QWidget;
     setCentralWidget(widget);
@@ -44,6 +44,7 @@ MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
     chart->setTheme(QChart::ChartThemeLight);
 
     chartView = new ChartView(chart);
+    connect(chartView, &ChartView::updateStartPosFromClick, this, &MainWindow::updatePlayfilePos);
 
     QSplitter *splitter = new QSplitter(Qt::Vertical);
     splitter->addWidget(tableView);
@@ -276,6 +277,10 @@ void MainWindow::exit()
 
 void MainWindow::startDecoding(int index)
 {
+    if (tableModel->index(index, COL_codec).data().toInt() > 3) {
+        statusBar()->showMessage("amr or amr_wb only for now!");
+        return;
+    }
     m_pProgressBar->setValue(0);
     m_pProgressBar->show();
     decodeThread = new DecodeThread(m_tempMediaFile.at(index), tableModel->index(index, COL_codec).data().toInt(), this);
@@ -325,19 +330,20 @@ void MainWindow::plot()
     qSort(indexList.begin(), indexList.end());
     qDebug() << "index:" << indexList[0] << "codec:" << tableModel->index(indexList[0], COL_codec).data().toInt() << m_tempMediaFile.at(indexList[0])->fileName();
 
-    if (currentPlotIndex == indexList[0]) {
-        //todo: reset zooming
-    }
-    else {
         if (m_tempDecodedFile.at(indexList[0]) == nullptr or
             m_codecVector.at(indexList[0]) != tableModel->index(indexList[0], COL_codec).data().toInt()) {
             waitForPlotList.append(indexList[0]);
             startDecoding(indexList[0]);
         }
         else {
-            plotOnChart(indexList);
+            if (currentPlotIndex == indexList[0]){
+                //todo reset zooming
+            }
+            else {
+                plotOnChart(indexList);
+            }
         }
-    }
+
 }
 
 void MainWindow::plotOnChart(QList<int>indexList)
@@ -386,6 +392,8 @@ void MainWindow::plotOnChart(QList<int>indexList)
     currentPlotIndex = indexList.at(0);
     PlayerFile = m_tempDecodedFile.at(indexList.at(0));
     currentFileSize = PlayerFile->size();
+    currentPlayPos = 0;
+    //startPlayPos = 0;
     switch (m_codecVector.at(indexList.at(0))) {
         case 0:
         case 2:    currentSampleRate = 8000;    break;
@@ -478,9 +486,11 @@ void MainWindow::play()
     if (PlayerFile == nullptr)    return;
     if (audio!=nullptr and audio->state() == QAudio::ActiveState) {
         audio->suspend();
+        m_pushTimer->stop();
     }
     else if (audio!=nullptr and audio->state() == QAudio::SuspendedState) {
         audio->resume();
+        m_pushTimer->start();
     }
     else {
         PlayerFile->close();
@@ -494,66 +504,93 @@ void MainWindow::play()
         format.setByteOrder(QAudioFormat::LittleEndian);
         format.setSampleType(QAudioFormat::UnSignedInt);//?
 
-        QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
+         QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
         if (!info.isFormatSupported(format)) {
             qWarning() << "Raw audio format not supported by backend, cannot play audio.";
             return;
         }
 
         if (audio != nullptr)    delete audio;    //no setFormat ??
+//        audio = new QAudioOutput( format, this);
+//        connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+//        audio->setNotifyInterval(150);
+//        connect(audio, SIGNAL(notify()), this, SLOT(playerRefreshProgress()));
+//        audio->start(PlayerFile);
+
         audio = new QAudioOutput( format, this);
-        connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
-//        connect(m_pushTimer, SIGNAL(timeout()), this, SLOT(pushTimerExpired()));
-        audio->setNotifyInterval(150);
-        connect(audio, SIGNAL(notify()), this, SLOT(playerRefreshProgress()));
-        audio->start(PlayerFile);
-//        audio->stop();
-//        m_output = audio->start();
-//        m_pushTimer->start(20);
+        connect(m_pushTimer, SIGNAL(timeout()), this, SLOT(pushTimerExpired()));
+        if (!(startPlayPos > currentFileSize or startPlayPos < 0)){
+            PlayerFile->seek(startPlayPos);
+            currentPlayPos = startPlayPos;
+        }
+        m_output = audio->start();
+        //connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+        m_pushTimer->start(20);
     }
 }
 
-//void MainWindow::pushTimerExpired()
-//{
-//    if (audio && audio->state() != QAudio::StoppedState) {
-//        qDebug() <<"bytesFree:"<< audio->bytesFree() << " periodSize:" << audio->periodSize();
-//        int chunks = audio->bytesFree()/audio->periodSize();
-//        while (chunks) {
-//           const qint64 len = PlayerFile->read(m_buffer, audio->periodSize());
-//           if (len)
-//               m_output->write(m_buffer, len);
-//           if (len != audio->periodSize())
-//               break;
-//           --chunks;
-//        }
-//    }
-//}
-
-void MainWindow::handleStateChanged(QAudio::State newState)
+void MainWindow::pushTimerExpired()
 {
-    switch (newState) {
-        case QAudio::IdleState:
-            // Finished playing (no more data)
+    if (audio && audio->state() != QAudio::StoppedState && audio->bytesFree()) {
+        //qDebug() <<"bytesFree:"<< audio->bytesFree() << " periodSize:" << audio->periodSize();
+        int chunks = audio->bytesFree()/audio->periodSize();
+        if (chunks == 0)    return;
+        currentPlayPos += (unsigned int)(chunks * audio->periodSize());
+//        qDebug() << chunks;
+//        qDebug() << 1.0 * currentPlayPos / currentFileSize;
+        chartView->refreshProgress(1.0 * currentPlayPos / currentFileSize );
+        while (chunks) {
+           const qint64 len = PlayerFile->read(m_buffer, audio->periodSize());
+           if (len)
+               m_output->write(m_buffer, len);
+           if (len != audio->periodSize())
+               break;
+           --chunks;
+        }
+        if (currentPlayPos >= currentFileSize) {
+            currentPlayPos = 0;
+            m_pushTimer->stop();
             audio->stop();
             PlayerFile->close();
             delete audio;
             audio = nullptr;
-            break;
-
-        case QAudio::StoppedState:
-            // Stopped for other reasons
-            if (audio->error() != QAudio::NoError) {
-                PlayerFile->close();
-                delete audio;
-                audio = nullptr;
-            }
-            break;
-
-        default:
-            // ... other cases as appropriate
-            break;
+        }
     }
 }
+
+void MainWindow::updatePlayfilePos(double posPercent)
+{
+    currentPlayPos = posPercent * currentFileSize;
+    if(currentPlayPos % 2 != 0)    currentPlayPos -= 1;
+    startPlayPos = currentPlayPos;
+    PlayerFile->seek(currentPlayPos);
+}
+
+//void MainWindow::handleStateChanged(QAudio::State newState)
+//{
+//    switch (newState) {
+//        case QAudio::IdleState:
+//            // Finished playing (no more data)
+//            audio->stop();
+//            PlayerFile->close();
+//            delete audio;
+//            audio = nullptr;
+//            break;
+
+//        case QAudio::StoppedState:
+//            // Stopped for other reasons
+//            if (audio->error() != QAudio::NoError) {
+//                PlayerFile->close();
+//                delete audio;
+//                audio = nullptr;
+//            }
+//            break;
+
+//        default:
+//            // ... other cases as appropriate
+//            break;
+//    }
+//}
 void MainWindow::playerRefreshProgress()
 {
     //qDebug() << audio->processedUSecs();
@@ -662,7 +699,7 @@ void MainWindow::createMenus()
 
     modesMenu= menuBar()->addMenu(tr("&Modes"));
 
-    settingsMenu= menuBar()->addMenu(tr("&Settings"));
+    settingsMenu = menuBar()->addMenu(tr("&Settings"));
     settingsMenu->addAction(preferenceAct);
 
     helpMenu = menuBar()->addMenu(tr("&Help"));

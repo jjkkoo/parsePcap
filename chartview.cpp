@@ -110,8 +110,10 @@ void ChartView::mousePressEvent(QMouseEvent *event)
     if (m_isTouching)
         return;
     if (event->button() == Qt::LeftButton) {
-        progressLine->setStartPos(progressLine->mapFromGlobal(event->globalPos()).x());
+        int tempPos = progressLine->mapFromGlobal(event->globalPos()).x();
+        progressLine->setStartPos(tempPos);
         progressLine->update();
+        emit updateStartPosFromClick(1.0 * tempPos / PLWidth);
     }
     //QChartView::mousePressEvent(event);
 }
