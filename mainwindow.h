@@ -83,7 +83,7 @@ private slots:
     void cancelAll();
     void copySelection();
     void playerRefreshProgress();
-//    void handleStateChanged(QAudio::State newState);
+    void handleStateChanged(QAudio::State newState);
     void pushTimerExpired();
     void updatePlayfilePos(double posPercent);
 
@@ -97,6 +97,7 @@ private:
     void startDecoding(int index);
     void exportAfterDecode(QList<int> indexList);
     void saveMediaFile(int index, QString directory);
+    void removeTempFile();
 
     QMenu *fileMenu;
     QMenu *editMenu;

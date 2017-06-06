@@ -6,7 +6,7 @@ ChartView::ChartView(QChart *chart, QWidget *parent) :
     QChartView(chart, parent), m_isTouching(false), m_dataLength{0}, zoomInfoList{{0,0,0,0}},
             progressLine(new ProgressLine(this))
 {
-    setRubberBand(QChartView::RectangleRubberBand);
+    //setRubberBand(QChartView::RectangleRubberBand);
 
 }
 
@@ -57,48 +57,43 @@ int ChartView::getDataLength(int index){
 //    return QChartView::viewportEvent(event);
 //}
 
-void ChartView::wheelEvent(QWheelEvent *event)
+void ChartView:: wheelEvent(QWheelEvent *event)
 {
     //QPoint numPixels = event->pixelDelta();
     QPoint numDegrees = event->angleDelta() / 8;
+    int tempPos = progressLine->mapFromGlobal(event->globalPos()).x();//current mouse posion in plot
+    qDebug() << tempPos << 1.0 * tempPos/PLWidth *zoomInfoList[0].step + zoomInfoList[0].start << PLWidth << zoomInfoList[0].start;
     if (numDegrees.y() > 0) {                                    //zoom in
-        if (zoomInfoList.at(0).step > 1) {                       //least step 1, suppose it is a int
-            zoomInfoList[0].step = zoomInfoList[0].step / 2;     //zoom in by 2
-            if(event->x() <= chart()->plotArea().width() / 2)    //show first half
-                zoomInfoList[0].end = zoomInfoList[0].start + zoomInfoList.at(0).step;
-            else                                                 //show second half
-                zoomInfoList[0].start = zoomInfoList[0].start + zoomInfoList.at(0).step;
+        if (zoomInfoList.at(0).step > 0.02) {                       //least step 20ms
+            zoomInfoList[0].start = zoomInfoList[0].start + 0.2 * tempPos / PLWidth * zoomInfoList[0].step;
+            zoomInfoList[0].step = zoomInfoList[0].step * 0.8;    //zoom in 80%
+            zoomInfoList[0].end = zoomInfoList[0].start + zoomInfoList[0].step;
+            qDebug() << zoomInfoList[0].start << 1.0 * tempPos/PLWidth *zoomInfoList[0].step + zoomInfoList[0].start;
             chart()->axisX()->setRange(QVariant(zoomInfoList.at(0).start), QVariant(zoomInfoList.at(0).end));
         }
     }
     else {                                                       //zoom out
         if (zoomInfoList.at(0).step < zoomInfoList.at(0).max) {  //make sure step less than max
-            zoomInfoList[0].step = (zoomInfoList.at(0).step * 2 > zoomInfoList.at(0).max ?    //if zoom result step larger than max then use max
-                                        zoomInfoList.at(0).max : zoomInfoList[0].step * 2);
-            if(qRound(zoomInfoList[0].start / zoomInfoList[0].step) % 2 == 0) {    //calculate which half we are now
-                if(zoomInfoList.at(0).max < zoomInfoList.at(0).start + zoomInfoList.at(0).step) {   //overfilled
-                    zoomInfoList[0].end = zoomInfoList.at(0).max;
-                    zoomInfoList[0].start = 0;
-                }
-                else
-                    zoomInfoList[0].end = zoomInfoList[0].start + zoomInfoList.at(0).step;    //later half
-            }
-            else {
-                if(zoomInfoList.at(0).start - zoomInfoList.at(0).step < 0) {    //start-step<0 reset
-                    zoomInfoList[0].end = zoomInfoList.at(0).max;
-                    zoomInfoList[0].start = 0;
-                }
-                else {
-                    if (zoomInfoList.at(0).end > zoomInfoList.at(0).start + zoomInfoList.at(0).step)
-                        zoomInfoList[0].start = zoomInfoList[0].start + zoomInfoList.at(0).step;
-                    else
-                        zoomInfoList[0].end = zoomInfoList[0].end + zoomInfoList.at(0).step;
-                }
-            }
+            zoomInfoList[0].start = zoomInfoList[0].start + (-0.25) * tempPos / PLWidth * zoomInfoList[0].step;
+            if (zoomInfoList[0].start < 0)    zoomInfoList[0].start = 0;
+            zoomInfoList[0].step = zoomInfoList[0].step / 0.8;    //zoom out 80%
+            if (zoomInfoList[0].step > zoomInfoList.at(0).max)    zoomInfoList[0].step = zoomInfoList.at(0).max;
+            zoomInfoList[0].end = zoomInfoList[0].start + zoomInfoList[0].step;
             chart()->axisX()->setRange(QVariant(zoomInfoList.at(0).start), QVariant(zoomInfoList.at(0).end));
         }
+        else {
+            if (zoomInfoList.at(0).start != 0) {
+                zoomInfoList[0].start = 0;
+                zoomInfoList[0].step = zoomInfoList.at(0).max;
+                zoomInfoList[0].end = zoomInfoList[0].start + zoomInfoList[0].step;
+                chart()->axisX()->setRange(QVariant(zoomInfoList.at(0).start), QVariant(zoomInfoList.at(0).end));
+            }
+        }
     }
+    qDebug() << chart()->plotArea();
+    qDebug() << this->mapToGlobal(chart()->plotArea().topLeft().toPoint());
     qDebug() << zoomInfoList.at(0).start << ";" << zoomInfoList.at(0).end << ";" << zoomInfoList.at(0).step << ";" << zoomInfoList.at(0).max;
+    //this->se
     event->accept();
 }
 
@@ -164,3 +159,11 @@ void ChartView::keyPressEvent(QKeyEvent *event)
     }
 }
 
+//void ChartView::paintEvent(QPaintEvent *event)
+//{
+//    qDebug() << chart()->plotArea();
+//    qDebug() << this->mapToGlobal(chart()->plotArea().topLeft().toPoint());
+//    qDebug() << zoomInfoList.at(0).start << ";" << zoomInfoList.at(0).end << ";" << zoomInfoList.at(0).step << ";" << zoomInfoList.at(0).max;
+//    qDebug() << this->mapToGlobal(geometry().topLeft());
+//    QChartView::paintEvent(event);
+//}

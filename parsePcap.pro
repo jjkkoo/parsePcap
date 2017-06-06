@@ -13,6 +13,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = parsePcap
 TEMPLATE = app
 
+RC_ICONS = lock_unlocked.ico
+
 INCLUDEPATH += $$PWD\WpdPack\Include
 INCLUDEPATH += $$PWD\amr_nb\include
 INCLUDEPATH += $$PWD\amr_wb\include

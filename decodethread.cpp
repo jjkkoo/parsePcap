@@ -129,7 +129,7 @@ void DecodeThread::run()
             currentFTptr = 0;
             ++bytePtr;
         }
-        qDebug() << "FTCount:" << FTCount;
+        //qDebug() << "FTCount:" << FTCount;
 
         /* for each amr data in each pkt, decode follow FT indicate */
         for (int i=0; i<FTCount; ++i) {

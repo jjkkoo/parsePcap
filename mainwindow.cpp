@@ -11,7 +11,7 @@ MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
     setCentralWidget(widget);
 
     tableView = new QTableView;
-    //tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    //tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     //tableView->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     tableView->resizeColumnsToContents();
 
@@ -74,6 +74,7 @@ MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
 
     QDir dir;
     if (dir.mkdir("temp"))    qDebug() << "no temp dir, creating one";
+    removeTempFile();
 }
 /*
 #ifndef QT_NO_CONTEXTMENU
@@ -362,7 +363,7 @@ void MainWindow::plotOnChart(QList<int>indexList)
     QVector<QPointF> points;
     char shortData[2];
     int tempMax = 0, tempCounter = 0, pLen = mediaDataFile.size() / 2,
-            threashHolder = pLen / 4000;
+            threashHolder = pLen / 16000;
 //        qDebug() << QDateTime::currentDateTime();
     for (int k = 0; k < pLen; ++k) {
         mediaDataFile.read(shortData, 2);
@@ -524,7 +525,7 @@ void MainWindow::play()
             currentPlayPos = startPlayPos;
         }
         m_output = audio->start();
-        //connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+        connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
         m_pushTimer->start(20);
     }
 }
@@ -541,10 +542,12 @@ void MainWindow::pushTimerExpired()
         chartView->refreshProgress(1.0 * currentPlayPos / currentFileSize );
         while (chunks) {
            const qint64 len = PlayerFile->read(m_buffer, audio->periodSize());
-           if (len)
-               m_output->write(m_buffer, len);
-           if (len != audio->periodSize())
-               break;
+           if (len) {
+               if (m_output->write(m_buffer, len) != len) {
+                   m_pushTimer->stop();
+                   return;
+               }
+           }
            --chunks;
         }
         if (currentPlayPos >= currentFileSize) {
@@ -566,31 +569,35 @@ void MainWindow::updatePlayfilePos(double posPercent)
     PlayerFile->seek(currentPlayPos);
 }
 
-//void MainWindow::handleStateChanged(QAudio::State newState)
-//{
-//    switch (newState) {
-//        case QAudio::IdleState:
-//            // Finished playing (no more data)
-//            audio->stop();
-//            PlayerFile->close();
-//            delete audio;
-//            audio = nullptr;
-//            break;
+void MainWindow::handleStateChanged(QAudio::State newState)
+{
+    switch (newState) {
+    /*
+        case QAudio::IdleState:
+            // Finished playing (no more data)
+            audio->stop();
+            PlayerFile->close();
+            delete audio;
+            audio = nullptr;
+            m_pushTimer->stop();
+            break;
+    */
+        case QAudio::StoppedState:
+            // Stopped for other reasons
+            if (audio->error() != QAudio::NoError) {
+                PlayerFile->close();
+                delete audio;
+                audio = nullptr;
+            }
+            m_pushTimer->stop();
+            break;
 
-//        case QAudio::StoppedState:
-//            // Stopped for other reasons
-//            if (audio->error() != QAudio::NoError) {
-//                PlayerFile->close();
-//                delete audio;
-//                audio = nullptr;
-//            }
-//            break;
+        default:
+            // ... other cases as appropriate
+            break;
+    }
+}
 
-//        default:
-//            // ... other cases as appropriate
-//            break;
-//    }
-//}
 void MainWindow::playerRefreshProgress()
 {
     //qDebug() << audio->processedUSecs();
@@ -729,4 +736,19 @@ void MainWindow::dropEvent(QDropEvent *event)
     settings.endGroup();
 }
 
+void MainWindow::removeTempFile()
+{
+    QDir dir("temp");
+    foreach (QFileInfo fileInfo, dir.entryInfoList(QDir::Files)) {
+//        int ret = remove(qPrintable(fileInfo.fileName()));
+//        qDebug() << ret << " : " << fileInfo.fileName();
+        //QLockFile lockFile(fileInfo.fileName());
+        //qDebug() << lockFile.isLocked();
+        //file.setPermissions(QFile::WriteOwner);
+        QFile file("temp\\" + fileInfo.fileName());
+        if(!file.remove()) {
+            qDebug() << "can not remove file: " << fileInfo.fileName();
+        }
+    }
+}
 
