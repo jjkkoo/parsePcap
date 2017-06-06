@@ -1491,7 +1491,6 @@ static Word16 order_MRDTX[] =
    4, 0x1
 };
 */
-
 /* Homing frames for the decoder */
 static const Word16 dhf_MR475[PRMNO_MR475] =
 {

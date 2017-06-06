@@ -1,5 +1,29 @@
 #include "decodethread.h"
 
+extern "C" {
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <memory.h>
+
+#include "interf_dec.h"
+#include "interf_rom.h"
+#include "rom_dec.h"
+#include "sp_dec.h"
+#include "typedef.h"
+
+#include "dec.h"
+#include "dec_acelp.h"
+#include "dec_dtx.h"
+#include "dec_gain.h"
+#include "dec_if.h"
+#include "dec_lpc.h"
+#include "dec_main.h"
+#include "dec_util.h"
+#include "if_rom.h"
+#include "typedef.h"
+}
+
 const QString decodeWasSuccess("decoding seems okay");
 
 DecodeThread::DecodeThread(QTemporaryFile *decodeFile, int codec, QObject *parent) : QThread(parent),
@@ -62,8 +86,8 @@ void DecodeThread::run()
         st = D_IF_init();
     }
 
-    Word16 synth[synthLen];              /* Buffer for speech */
-    UWord8 serial[speechBufferLen], pktBuffer[speechBufferLen * 12];
+    short synth[synthLen];              /* Buffer for speech */
+    unsigned char serial[speechBufferLen], pktBuffer[speechBufferLen * 12];
 
     while(fread(&pktLen, sizeof(unsigned short), 1, f_serial)) {
         if (m_abort)    return;
@@ -75,7 +99,7 @@ void DecodeThread::run()
         FTCount = 0;
         bytePtr = 0;
         currentFTptr = 4;
-        if (fread(pktBuffer, sizeof (UWord8), pktLen, f_serial )!=pktLen){     //read whole packet
+        if (fread(pktBuffer, sizeof (unsigned char), pktLen, f_serial )!=pktLen){     //read whole packet
             qWarning() << "error reading packets";
             break;
         }

@@ -376,7 +376,8 @@ void MainWindow::plotOnChart(QList<int>indexList)
     }
 //        qDebug() << QDateTime::currentDateTime();
     chart->axisX(series)->setRange(0, mediaDataFile.size()/2.0*codec );
-    chart->axisY(series)->setRange(-tempMax, tempMax );
+    if (tempMax > 0)    // setRange(-0, 0) will crash;
+        chart->axisY(series)->setRange(-tempMax, tempMax );
    // qDebug() << points;
     series->replace(points);
     series->setName(QString("index:%1_%2_%3_%4_%5").arg(indexList[0] + 1).arg(tableModel->index(indexList[0], COL_source_ip).data().toString()).arg(tableModel->index(indexList[0], COL_srcPort).data().toString())
@@ -520,7 +521,7 @@ void MainWindow::play()
 
         audio = new QAudioOutput( format, this);
         connect(m_pushTimer, SIGNAL(timeout()), this, SLOT(pushTimerExpired()));
-        if (!(startPlayPos > currentFileSize or startPlayPos < 0)){
+        if (!(startPlayPos > currentFileSize)){// or startPlayPos < 0)){
             PlayerFile->seek(startPlayPos);
             currentPlayPos = startPlayPos;
         }

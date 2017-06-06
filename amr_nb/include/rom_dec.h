@@ -32,22 +32,22 @@
 /*
  * definition of constants
  */
-#define M               10      /* Order of LP filter */
-#define MP1             (M+1)   /* Order of LP filter + 1 */
+#define amrNbM               10      /* Order of LP filter */
+#define MP1             (amrNbM+1)   /* Order of LP filter + 1 */
 #define L_WINDOW        240     /* Window size in LP analysis */
 #define L_NEXT          40      /* Overhead in LP analysis */
 #define LTPG_MEM_SIZE   5       /* number of stored past LTP coding gains + 1 */
 #define N_FRAME         7       /* old pitch gains in average calculation */
 #define DTX_HIST_SIZE   8       /* DTX history size */
 #define L_TOTAL         320     /* Total size of speech buffer. */
-#define L_FRAME         160     /* Frame size */
+#define amrNbL_FRAME         160     /* Frame size */
 #define L_FRAME_BY2     80      /* Frame size divided by 2 */
 #define L_SUBFR         40      /* Subframe size */
 #define L_CODE          40      /* codevector length */
-#define PIT_MAX         143     /* Maximum pitch lag */
+#define amrNbPIT_MAX         143     /* Maximum pitch lag */
 #define PIT_MIN         20      /* Minimum pitch lag */
 #define PIT_MIN_MR122   18      /* Minimum pitch lag (MR122 mode) */
-#define L_INTERPOL      (10+1)  /* Length of filter for interpolation */
+#define amrNbL_INTERPOL      (10+1)  /* Length of filter for interpolation */
 #define NPRED 4                 /* number of prediction taps */
 #define SHARPMIN  0             /* Minimum value of pitch sharpening */
 #define MAX_PRM_SIZE    57      /* max. num. of params */
@@ -58,7 +58,7 @@
 #define NB_TRACK_MR102  4       /* number of tracks mode mr102 */
 #define STEP            5       /* codebook step size */
 #define STEP_MR102      4       /* codebook step size mode mr102 */
-#define NC              M/2     /* Order of LP filter divided by 2 */
+#define NC              amrNbM/2     /* Order of LP filter divided by 2 */
 
 /* vad */
 #define COMPLEN               9        /* Number of sub-bands used by VAD */
@@ -84,7 +84,7 @@
 #define FRAMEENERGYLIMIT      17578    /* 150 */
 #define LOWERNOISELIMIT       20       /*  5 */
 #define UPPERNOISELIMIT       1953     /* 50 */
-#define AZ_SIZE               (4*M+4)  /* Size of array of LP filters in 4 subfr.s */
+#define AZ_SIZE               (4*amrNbM+4)  /* Size of array of LP filters in 4 subfr.s */
 #define AGC_FAC               29491    /* Factor for automatic gain control 0.9 */
 #define PHDGAINMEMSIZE        5
 #define PHDTHR1LTP            9830     /* 0.6 in Q14 */
@@ -165,7 +165,7 @@ static const Word32 pred_MR122[NPRED] =
    12
 };
 
-static const Word32 gamma4_gamma3_MR122[M] =
+static const Word32 gamma4_gamma3_MR122[amrNbM] =
 {
    22938,
    16057,
@@ -178,7 +178,7 @@ static const Word32 gamma4_gamma3_MR122[M] =
    1322,
    925
 };
-static const Word32 gamma3[M] =
+static const Word32 gamma3[amrNbM] =
 {
    18022,
    9912,
@@ -191,7 +191,7 @@ static const Word32 gamma3[M] =
    151,
    83
 };
-static const Word32 gamma4_MR122[M] =
+static const Word32 gamma4_MR122[amrNbM] =
 {
    24576,
    18432,
@@ -11309,7 +11309,7 @@ static const Word32 dico5_lsf_5[DICO5_SIZE_5 * 4] =
 
 
 /* Scaling factors for the lsp variability operation */
-static const Word16 lsf_hist_mean_scale[M] =
+static const Word16 lsf_hist_mean_scale[amrNbM] =
 {
    20000,
    20000,

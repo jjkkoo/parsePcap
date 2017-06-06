@@ -1,27 +1,6 @@
 #ifndef DecodeThread_H
 #define DecodeThread_H
-extern "C" {
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <memory.h>
-#include "interf_dec.h"
-#include "interf_rom.h"
-#include "rom_dec.h"
-#include "sp_dec.h"
-#include "typedef.h"
 
-#include "dec.h"
-#include "dec_acelp.h"
-#include "dec_dtx.h"
-#include "dec_gain.h"
-#include "dec_if.h"
-#include "dec_lpc.h"
-#include "dec_main.h"
-#include "dec_util.h"
-#include "if_rom.h"
-#include "typedef.h"
-}
 
 #include <QtMath>
 #include <QThread>
