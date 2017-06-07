@@ -3,15 +3,14 @@
 #define CHARTVIEW_H
 
 #include <QtCharts/QChartView>
-#include <QtWidgets/QRubberBand>
+//#include <QtWidgets/QRubberBand>
 
 #include <QDebug>
-#include <QtMath>
+//#include <QtMath>
 
 #include "progressline.h"
 
 QT_CHARTS_USE_NAMESPACE
-
 
 typedef struct zoomInfo {
     double start;
@@ -36,14 +35,14 @@ signals:
     void updateStartPosFromClick(double posPercent);
 
 protected:
-    void resizeEvent(QResizeEvent *event);
-    void wheelEvent(QWheelEvent *event);
+    void resizeEvent(QResizeEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
     //bool viewportEvent(QEvent *event);
-    void mousePressEvent(QMouseEvent *event);
-    void mouseMoveEvent(QMouseEvent *event);
-    void mouseReleaseEvent(QMouseEvent *event);
-    void keyPressEvent(QKeyEvent *event);
-//    void paintEvent(QPaintEvent *event);
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
+//    void paintEvent(QPaintEvent *event) override;
 
 private:
     bool m_isTouching;

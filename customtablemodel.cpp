@@ -6,22 +6,6 @@
 CustomTableModel::CustomTableModel(QObject *parent) : m_rowCount(0), m_data(QList<QStringList>()),
     QAbstractTableModel(parent)
 {
-    //qsrand(QTime(0, 0, 0).secsTo(QTime::currentTime()));
-
-    //m_columnCount = 12;
-    //m_rowCount = 0;
-
-    // m_data
-//    for (int i = 0; i < m_rowCount; i++) {
-//        QVector<QString>* dataVec = new QVector<QString>(columnHeader.size());
-//        for (int k = 0; k < dataVec->size(); k++) {
-//            if (k % 2 == 0)
-//                dataVec->replace(k, QString(i * 50 + qrand() % 20));
-//            else
-//                dataVec->replace(k, QString(qrand() % 100));
-//        }
-//        m_data.append(dataVec);
-//    }
 }
 
 int CustomTableModel::rowCount(const QModelIndex &parent) const
@@ -56,6 +40,9 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const
     } else if (role == Qt::EditRole) {
         return m_data[index.row()].at(index.column());
     } else if (role == Qt::BackgroundRole) {
+        if (markedList.count(index.row())) {
+            return QColor(Qt::lightGray);
+        }
         if (index.row() % 2 == 1)
             return QColor("#E6E6FA");    //lavender http://www.wahart.com.hk/rgb.htm
         else
@@ -126,4 +113,22 @@ bool CustomTableModel::clearData()
 
 QStringList CustomTableModel::getLine(int index) {
     return m_data.at(index).mid(0,4);
+}
+
+void CustomTableModel::toggleMarkUnmark(QSet<int> targetList) {
+    qDebug() << targetList;
+    foreach(const int& target, targetList) {
+        std::set<int>::iterator it = markedList.find(target);
+        if (it == markedList.end()){
+            markedList.insert(target);
+        }
+        else {
+            markedList.erase(it);
+        }
+        emit dataChanged(this->index(target,0), this->index(target, columnHeader.size()), QVector<int>(Qt::BackgroundRole));
+    }
+}
+
+std::set<int> CustomTableModel::getMarked() {
+    return markedList;
 }

@@ -5,14 +5,14 @@
 
 MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
     m_tempDecodedFile(QVector<QTemporaryFile *>()), m_codecVector(QVector<int>()),
-    currentPlotIndex(-1),PlayerFile(nullptr), audio(nullptr), m_output(0), m_pushTimer(new QTimer(this))
+    currentPlotIndex(-1), m_pushTimer(new QTimer(this))
 {
+    /* create MainWindow ui widgets */
     QWidget *widget = new QWidget;
     setCentralWidget(widget);
 
-    tableView = new QTableView;
+    tableView = new CustomTableView;
     //tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    //tableView->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     tableView->resizeColumnsToContents();
 
     tableModel = new CustomTableModel;
@@ -21,8 +21,8 @@ MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
     ComboBoxDelegate* delegate = new ComboBoxDelegate;
     tableView->setItemDelegateForColumn(COL_codec, delegate);
 
-    chart = new Chart;
-    chart->setAnimationOptions(Chart::AllAnimations);
+    chart = new QChart;
+    chart->setAnimationOptions(QChart::AllAnimations);
 
     series = new QLineSeries;
 
@@ -30,7 +30,6 @@ MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
     chart->createDefaultAxes();
 
     QValueAxis *axisX = new QValueAxis;
-    //axisX->setRange(0, 2000);
     axisX->setLabelFormat("%.3f");
     axisX->setTitleText("Reference Time");
     QValueAxis *axisY = new QValueAxis;
@@ -59,14 +58,10 @@ MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
 
     createActions();
     createMenus();
-    //resize(798, 507);
 
-    parseThread = nullptr;
-    decodeThread = nullptr;
-
+    /* initiate MainWindow ui vars */
     initUI();
     setupPosition();
-
     tableView->setAcceptDrops(false);
     chartView->setAcceptDrops(false);
     splitter->setAcceptDrops(false);
@@ -76,16 +71,7 @@ MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
     if (dir.mkdir("temp"))    qDebug() << "no temp dir, creating one";
     removeTempFile();
 }
-/*
-#ifndef QT_NO_CONTEXTMENU
-void MainWindow::contextMenuEvent(QContextMenuEvent *event)
-{
-    QMenu menu(this);
-    menu.addAction(markAct);
-    menu.exec(event->globalPos());
-}
-#endif // QT_NO_CONTEXTMENU
-*/
+
 void MainWindow::initUI()
 {
     m_pProgressBar->hide();
@@ -599,13 +585,13 @@ void MainWindow::handleStateChanged(QAudio::State newState)
     }
 }
 
-void MainWindow::playerRefreshProgress()
-{
-    //qDebug() << audio->processedUSecs();
-    //qDebug() << audio->periodSize();
-    //qDebug() << 1.0 * audio->processedUSecs() / 1000000 / (currentFileSize / (2 * 16000));
-    chartView->refreshProgress(1.0 * audio->processedUSecs() / 1000000 / (currentFileSize / (2 * currentSampleRate)));
-}
+//void MainWindow::playerRefreshProgress()
+//{
+//    //qDebug() << audio->processedUSecs();
+//    //qDebug() << audio->periodSize();
+//    //qDebug() << 1.0 * audio->processedUSecs() / 1000000 / (currentFileSize / (2 * 16000));
+//    chartView->refreshProgress(1.0 * audio->processedUSecs() / 1000000 / (currentFileSize / (2 * currentSampleRate)));
+//}
 
 void MainWindow::stop()
 {
@@ -623,13 +609,6 @@ void MainWindow::showPreference()
     TabDialog tabdialog(this);
     tabdialog.exec();
 }
-
-/*
-void MainWindow::mark()
-{
-    //editor1->setText(tr("Invoked <b>Edit|Cut</b>"));
-}
-*/
 
 void MainWindow::createActions()
 {
@@ -673,12 +652,15 @@ void MainWindow::createActions()
     preferenceAct->setStatusTip(tr("Preference"));
     connect(preferenceAct, &QAction::triggered, this, &MainWindow::showPreference);
 
-/*
-    markAct = new QAction(tr("&Mark"), this);
-    markAct->setShortcut(tr("F2"));
-    markAct->setStatusTip(tr("Mark"));
-    connect(markAct, &QAction::triggered, this, &MainWindow::mark);
-*/
+    toggleMarkAct = new QAction(tr("&Mark/UnMark"), this);
+    toggleMarkAct->setShortcut(tr("Ctrl+F2"));
+    toggleMarkAct->setStatusTip(tr("Mark/UnMark"));
+    connect(toggleMarkAct, &QAction::triggered, this, &MainWindow::toggleMark);
+
+    seekMarkAct = new QAction(tr("&Jump To Mark"), this);
+    seekMarkAct->setShortcut(tr("F2"));
+    seekMarkAct->setStatusTip(tr("Jump To Mark"));
+    connect(seekMarkAct, &QAction::triggered, this, &MainWindow::seekMark);
 
     QShortcut * escShortcut = new QShortcut(QKeySequence::Cancel, this);
     connect(escShortcut, &QShortcut::activated, this, &MainWindow::cancelAll);
@@ -700,6 +682,8 @@ void MainWindow::createMenus()
     editMenu = menuBar()->addMenu(tr("&Edit"));
     editMenu->addAction(exportAct);
     editMenu->addAction(plotAct);
+    editMenu->addAction(toggleMarkAct);
+    editMenu->addAction(seekMarkAct);
 
     playMenu = editMenu->addMenu(tr("&Play"));
     playMenu->addAction(playAct);
@@ -711,9 +695,6 @@ void MainWindow::createMenus()
     settingsMenu->addAction(preferenceAct);
 
     helpMenu = menuBar()->addMenu(tr("&Help"));
-//    helpMenu->addAction(aboutAct);
-//    helpMenu->addAction(aboutQtAct);
-
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
@@ -751,5 +732,41 @@ void MainWindow::removeTempFile()
             qDebug() << "can not remove file: " << fileInfo.fileName();
         }
     }
+}
+
+void MainWindow::toggleMark()
+{
+    qDebug() << "toggleMark";
+    QItemSelectionModel * selection = tableView->selectionModel();
+    QModelIndexList indexes = selection->selectedIndexes();
+    if (indexes.size() <= 0)    return;
+    QSet<int> indexRowSet;
+    foreach(const QModelIndex& index, indexes){
+        indexRowSet.insert(index.row());
+    }
+    tableModel->toggleMarkUnmark(indexRowSet);
+//    foreach(const int& row, indexRowSet){
+//        tableView->update(index.sibling(0,1));
+//    }
+}
+
+void MainWindow::seekMark()
+{
+    qDebug() << "seekMark";
+    std::set<int> targetSet = tableModel->getMarked();
+    qDebug() << *targetSet.begin();
+    QItemSelectionModel * selection = tableView->selectionModel();
+    QModelIndexList indexes = selection->selectedIndexes();
+    if (indexes.size() <= 0) {
+        tableView->selectionModel()->select(tableView->model()->index(*targetSet.begin(), 0), QItemSelectionModel::Rows);
+        //emit tableModel->dataChanged(tableModel->index(*targetSet.begin(),0), tableModel->index(*targetSet.begin(), 10), QVector<int>(Qt::BackgroundRole));
+        return;
+    }
+    QSet<int> indexRowSet;
+    foreach(const QModelIndex& index, indexes){
+        indexRowSet.insert(index.row());
+    }
+    qDebug() << indexRowSet;
+
 }
 

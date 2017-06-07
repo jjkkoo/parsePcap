@@ -29,7 +29,7 @@ void ChartView::refreshProgress(double progress)
 {
     if (progress > 1)    progress = 1;
         //qDebug() << progress << " " << chart()->plotArea().toRect().width();
-        progressLine->setPos(progress * PLWidth);
+        progressLine->setPos((zoomInfoList.at(0).max * progress - zoomInfoList.at(0).start) * PLWidth / zoomInfoList.at(0).step);
         progressLine->update();
 }
 
@@ -62,13 +62,13 @@ void ChartView:: wheelEvent(QWheelEvent *event)
     //QPoint numPixels = event->pixelDelta();
     QPoint numDegrees = event->angleDelta() / 8;
     int tempPos = progressLine->mapFromGlobal(event->globalPos()).x();//current mouse posion in plot
-    qDebug() << tempPos << 1.0 * tempPos/PLWidth *zoomInfoList[0].step + zoomInfoList[0].start << PLWidth << zoomInfoList[0].start;
+    //qDebug() << tempPos << 1.0 * tempPos/PLWidth *zoomInfoList[0].step + zoomInfoList[0].start << PLWidth << zoomInfoList[0].start;
     if (numDegrees.y() > 0) {                                    //zoom in
         if (zoomInfoList.at(0).step > 0.02) {                       //least step 20ms
             zoomInfoList[0].start = zoomInfoList[0].start + 0.2 * tempPos / PLWidth * zoomInfoList[0].step;
             zoomInfoList[0].step = zoomInfoList[0].step * 0.8;    //zoom in 80%
             zoomInfoList[0].end = zoomInfoList[0].start + zoomInfoList[0].step;
-            qDebug() << zoomInfoList[0].start << 1.0 * tempPos/PLWidth *zoomInfoList[0].step + zoomInfoList[0].start;
+            //qDebug() << zoomInfoList[0].start << 1.0 * tempPos/PLWidth *zoomInfoList[0].step + zoomInfoList[0].start;
             chart()->axisX()->setRange(QVariant(zoomInfoList.at(0).start), QVariant(zoomInfoList.at(0).end));
         }
     }
@@ -90,17 +90,17 @@ void ChartView:: wheelEvent(QWheelEvent *event)
             }
         }
     }
-    qDebug() << chart()->plotArea();
-    qDebug() << this->mapToGlobal(chart()->plotArea().topLeft().toPoint());
-    qDebug() << zoomInfoList.at(0).start << ";" << zoomInfoList.at(0).end << ";" << zoomInfoList.at(0).step << ";" << zoomInfoList.at(0).max;
+//    qDebug() << chart()->plotArea();
+//    qDebug() << this->mapToGlobal(chart()->plotArea().topLeft().toPoint());
+//    qDebug() << zoomInfoList.at(0).start << ";" << zoomInfoList.at(0).end << ";" << zoomInfoList.at(0).step << ";" << zoomInfoList.at(0).max;
     //this->se
     event->accept();
 }
 
 void ChartView::mousePressEvent(QMouseEvent *event)
 {
-    qDebug() << chart()->plotArea();
-    qDebug() << event->x() << ":" << event->y() << ":" << event->globalX() << ":" << event->globalY();
+//    qDebug() << chart()->plotArea();
+//    qDebug() << event->x() << ":" << event->y() << ":" << event->globalX() << ":" << event->globalY();
 
     if (m_isTouching)
         return;
@@ -110,14 +110,14 @@ void ChartView::mousePressEvent(QMouseEvent *event)
         progressLine->update();
         emit updateStartPosFromClick(1.0 * tempPos / PLWidth);
     }
-    //QChartView::mousePressEvent(event);
+    QChartView::mousePressEvent(event);
 }
 
 void ChartView::mouseMoveEvent(QMouseEvent *event)
 {
     if (m_isTouching)
         return;
-    //QChartView::mouseMoveEvent(event);
+    QChartView::mouseMoveEvent(event);
 }
 
 void ChartView::mouseReleaseEvent(QMouseEvent *event)
@@ -129,7 +129,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event)
     // we must put them back on.
     chart()->setAnimationOptions(QChart::SeriesAnimations);
 
-    //QChartView::mouseReleaseEvent(event);
+    QChartView::mouseReleaseEvent(event);
 }
 
 void ChartView::keyPressEvent(QKeyEvent *event)

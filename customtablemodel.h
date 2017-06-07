@@ -5,6 +5,9 @@
 #include <QtCore/QHash>
 #include <QtCore/QRect>
 #include <QColor>
+#include <QSet>
+
+#include<set>
 
 #ifndef COLUMNS_H
 #define COLUMNS_H
@@ -45,6 +48,8 @@ public:
     bool appendData(QList<QStringList> data);
     bool clearData();
     QStringList getLine(int index);
+    void toggleMarkUnmark(QSet<int> targetList);
+    std::set<int> getMarked();
 
 private:
     int m_columnCount;
@@ -52,6 +57,7 @@ private:
 
     const QStringList columnHeader{"source ip","srcPort","dest ip","destPort","first packet time","last packet time","pktCount","PT","SSRC","codec","Lost","Dup","WrongSeq","MaxDelta(s/seq)"};
     QList<QStringList> m_data;
+    std::set<int> markedList;
 
 };
 

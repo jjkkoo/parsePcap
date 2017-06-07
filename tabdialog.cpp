@@ -15,16 +15,9 @@ TabDialog::TabDialog(QWidget *parent)
     tabWidget->addTab(new GeneralTab(), tr("General"));
     tabWidget->addTab(new PayLoadTypeMapTab(), tr("Payload Type"));
 
-    //buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
-
-                                    // | QDialogButtonBox::Cancel);
-
-    //connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-    //connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
-
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(tabWidget);
-    //mainLayout->addWidget(buttonBox);
+
     setLayout(mainLayout);
 
     setWindowTitle(tr("Preference"));

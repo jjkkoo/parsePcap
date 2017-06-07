@@ -31,22 +31,22 @@ SOURCES += main.cpp\
     customtablemodel.cpp \
     parsethread.cpp \
     comboboxdelegate.cpp \
-    customchart.cpp \
     chartview.cpp \
     decodethread.cpp \
     tabdialog.cpp \
     dialogmodel.cpp \
-    progressline.cpp
+    progressline.cpp \
+    customtableview.cpp
 
 HEADERS  += mainwindow.h \
     customtablemodel.h \
     parsethread.h \
     comboboxdelegate.h \
-    customchart.h \
     chartview.h \
     decodethread.h \
     tabdialog.h \
     dialogmodel.h \
     wavefile.h \
-    progressline.h
+    progressline.h \
+    customtableview.h
 

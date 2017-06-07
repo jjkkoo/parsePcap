@@ -22,7 +22,7 @@ QT_END_NAMESPACE
 
 //using QAudio::State;
 
-//#include <QtCharts/QChart>
+#include <QtCharts/QChart>
 //#include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
@@ -32,7 +32,7 @@ QT_END_NAMESPACE
 #include <QAudioFormat>
 #include <QAudioOutput>
 
-#include "customchart.h"
+//#include "customchart.h"
 #include "chartview.h"
 #include "customtablemodel.h"
 #include "parsethread.h"
@@ -40,10 +40,9 @@ QT_END_NAMESPACE
 #include "comboboxdelegate.h"
 #include "tabdialog.h"
 #include "wavefile.h"
-
+#include "customtableview.h"
 
 //QT_CHARTS_USE_NAMESPACE
-
 
 class MainWindow : public QMainWindow
 {
@@ -51,17 +50,11 @@ class MainWindow : public QMainWindow
 
 public:
     MainWindow();
-/*
-protected:
-#ifndef QT_NO_CONTEXTMENU
-    void contextMenuEvent(QContextMenuEvent *event) Q_DECL_OVERRIDE;
-#endif // QT_NO_CONTEXTMENU
-*/
 
 protected:
     void closeEvent(QCloseEvent *event) override;
-    void dragEnterEvent(QDragEnterEvent *event);
-    void dropEvent(QDropEvent *event);
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
 
 private slots:
     void pickFile();
@@ -72,7 +65,6 @@ private slots:
     void play();
     void stop();
     void showPreference();
-    //void mark();
     void refreshProgress(int value);
     void parseFinished(QList<QStringList> parsedList, QList<QTemporaryFile *> fileNameList);//QStringList fileNameList);
     void decodeFinished(QTemporaryFile * decodeResult);
@@ -82,10 +74,12 @@ private slots:
     void plotOnChart(QList<int>indexList);
     void cancelAll();
     void copySelection();
-    void playerRefreshProgress();
+//    void playerRefreshProgress();
     void handleStateChanged(QAudio::State newState);
     void pushTimerExpired();
     void updatePlayfilePos(double posPercent);
+    void toggleMark();
+    void seekMark();
 
 private:
     void createActions();
@@ -114,12 +108,13 @@ private:
     QAction *playAct;
     QAction *stopAct;
     QAction *preferenceAct;
-    //QAction *markAct;
+    QAction *toggleMarkAct;
+    QAction *seekMarkAct;
 
     QTableView *tableView;
     CustomTableModel *tableModel;
     ChartView *chartView;
-    Chart *chart;
+    QChart *chart;
     QLineSeries *series;
     QProgressBar *m_pProgressBar;
     ParseThread *parseThread;
