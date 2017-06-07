@@ -41,7 +41,7 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const
         return m_data[index.row()].at(index.column());
     } else if (role == Qt::BackgroundRole) {
         if (markedList.count(index.row())) {
-            return QColor(Qt::lightGray);
+            return QColor("#FF6347");    //Tomato
         }
         if (index.row() % 2 == 1)
             return QColor("#E6E6FA");    //lavender http://www.wahart.com.hk/rgb.htm
@@ -131,4 +131,9 @@ void CustomTableModel::toggleMarkUnmark(QSet<int> targetList) {
 
 std::set<int> CustomTableModel::getMarked() {
     return markedList;
+}
+
+void CustomTableModel::clearMarked()
+{
+    markedList.clear();
 }

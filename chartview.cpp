@@ -70,6 +70,10 @@ void ChartView:: wheelEvent(QWheelEvent *event)
             zoomInfoList[0].end = zoomInfoList[0].start + zoomInfoList[0].step;
             //qDebug() << zoomInfoList[0].start << 1.0 * tempPos/PLWidth *zoomInfoList[0].step + zoomInfoList[0].start;
             chart()->axisX()->setRange(QVariant(zoomInfoList.at(0).start), QVariant(zoomInfoList.at(0).end));
+
+            if (zoomInfoList.at(0).step < 1 and zoomInfoList.at(0).step > 0.8){
+                emit showAllOneSecondPoints();
+            }
         }
     }
     else {                                                       //zoom out
@@ -88,6 +92,9 @@ void ChartView:: wheelEvent(QWheelEvent *event)
                 zoomInfoList[0].end = zoomInfoList[0].start + zoomInfoList[0].step;
                 chart()->axisX()->setRange(QVariant(zoomInfoList.at(0).start), QVariant(zoomInfoList.at(0).end));
             }
+        }
+        if (zoomInfoList.at(0).step > 1 and zoomInfoList.at(0).step < 1.25){
+            emit showAllSampledPoints();
         }
     }
 //    qDebug() << chart()->plotArea();

@@ -44,6 +44,8 @@ MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
 
     chartView = new ChartView(chart);
     connect(chartView, &ChartView::updateStartPosFromClick, this, &MainWindow::updatePlayfilePos);
+    connect(chartView, &ChartView::showAllOneSecondPoints, this, &MainWindow::showAllOneSecondPoints);
+    connect(chartView, &ChartView::showAllSampledPoints, this, &MainWindow::showAllSampledPoints);
 
     QSplitter *splitter = new QSplitter(Qt::Vertical);
     splitter->addWidget(tableView);
@@ -252,6 +254,7 @@ void MainWindow::clearTable()
             if(fPtr != nullptr) {delete fPtr;}
         m_tempDecodedFile.clear();
     }
+    tableModel->clearMarked();
     m_codecVector.clear();
     initUI();
 }
@@ -389,6 +392,52 @@ void MainWindow::plotOnChart(QList<int>indexList)
         case 3:    currentSampleRate = 16000;   break;
         default:   currentSampleRate = 8000;
     }
+}
+
+void MainWindow::showAllOneSecondPoints()
+{
+    QFile mediaDataFile(PlayerFile->fileName());
+    if(!mediaDataFile.open(QIODevice::ReadOnly)) {
+        statusBar()->showMessage("error reading cache files!");
+        return;
+    }
+    QVector<QPointF> points;
+    char shortData[2];
+    zoomInfo z = chartView->getZoomInfo(0);
+    qint64 startPos = z.start * currentSampleRate * 2;
+    if (startPos % 2 !=0)    --startPos;
+    mediaDataFile.seek(startPos);
+    double codec = 1.0 / currentSampleRate;
+    bool dataAvailable = true;
+    for (unsigned int k = 0; k <= z.step * currentSampleRate; ++k) {
+        if (dataAvailable) {
+            qint64 ret = mediaDataFile.read(shortData, 2);
+            if (ret < 2)    dataAvailable = false;
+            points.append( QPointF(z.start + k * codec, *(short *)shortData ));
+        }
+        else {
+            points.append( QPointF(k * codec, 0));
+        }
+    }
+    series->replace(points);
+}
+
+void MainWindow::showAllSampledPoints()
+{
+    QFile mediaDataFile(PlayerFile->fileName());
+    if(!mediaDataFile.open(QIODevice::ReadOnly)) {
+        statusBar()->showMessage("error reading cache files!");
+        return;
+    }
+    QVector<QPointF> points;
+    char shortData[2];
+    double codec = 1.0 / currentSampleRate;
+    int pLen = mediaDataFile.size() / 2;
+    for (int k = 0; k < pLen; ++k) {
+        mediaDataFile.read(shortData, 2);
+        points.append( QPointF(k * codec, *(short *)shortData ));
+    }
+    series->replace(points);
 }
 
 void MainWindow::exportMedia()
@@ -553,7 +602,8 @@ void MainWindow::updatePlayfilePos(double posPercent)
     currentPlayPos = posPercent * currentFileSize;
     if(currentPlayPos % 2 != 0)    currentPlayPos -= 1;
     startPlayPos = currentPlayPos;
-    PlayerFile->seek(currentPlayPos);
+    if(PlayerFile->isOpen())
+        PlayerFile->seek(currentPlayPos);
 }
 
 void MainWindow::handleStateChanged(QAudio::State newState)
@@ -668,6 +718,9 @@ void MainWindow::createActions()
 
     QShortcut * copyShortcut = new QShortcut(QKeySequence::Copy, this);
     connect(copyShortcut, &QShortcut::activated, this, &MainWindow::copySelection);
+
+    QShortcut * selectAllShortcut = new QShortcut( QKeySequence(tr("Ctrl+A")), this);
+    connect(selectAllShortcut, &QShortcut::activated, this, &MainWindow::selectAll);
 }
 
 void MainWindow::createMenus()
@@ -682,8 +735,10 @@ void MainWindow::createMenus()
     editMenu = menuBar()->addMenu(tr("&Edit"));
     editMenu->addAction(exportAct);
     editMenu->addAction(plotAct);
+    editMenu->addSeparator();
     editMenu->addAction(toggleMarkAct);
     editMenu->addAction(seekMarkAct);
+    editMenu->addSeparator();
 
     playMenu = editMenu->addMenu(tr("&Play"));
     playMenu->addAction(playAct);
@@ -745,28 +800,42 @@ void MainWindow::toggleMark()
         indexRowSet.insert(index.row());
     }
     tableModel->toggleMarkUnmark(indexRowSet);
-//    foreach(const int& row, indexRowSet){
-//        tableView->update(index.sibling(0,1));
-//    }
 }
 
 void MainWindow::seekMark()
 {
     qDebug() << "seekMark";
     std::set<int> targetSet = tableModel->getMarked();
-    qDebug() << *targetSet.begin();
+    if (targetSet.empty())    return;    //if marked list is empty, do nothing
+
     QItemSelectionModel * selection = tableView->selectionModel();
     QModelIndexList indexes = selection->selectedIndexes();
-    if (indexes.size() <= 0) {
-        tableView->selectionModel()->select(tableView->model()->index(*targetSet.begin(), 0), QItemSelectionModel::Rows);
-        //emit tableModel->dataChanged(tableModel->index(*targetSet.begin(),0), tableModel->index(*targetSet.begin(), 10), QVector<int>(Qt::BackgroundRole));
-        return;
-    }
-    QSet<int> indexRowSet;
-    foreach(const QModelIndex& index, indexes){
-        indexRowSet.insert(index.row());
-    }
-    qDebug() << indexRowSet;
 
+    int tempMax(-1);
+    std::set<int>::iterator it;
+    if (indexes.size() <= 0) {    //if nothing is selected
+        it = targetSet.begin();
+    }
+    else {                        //else seed max row number, and get upperBound or begin
+        foreach(const QModelIndex& index, indexes){
+            if (index.row() > tempMax)
+                tempMax = index.row();
+        }
+        it = targetSet.upper_bound(tempMax);
+        if( it == targetSet.end())    it = targetSet.begin();
+    }
+    selection->select(QItemSelection(tableView->model()->index(*it, 0),
+                                     tableView->model()->index(*it, columnHeader.size() - 1)),
+                      QItemSelectionModel::ClearAndSelect);
+
+}
+
+void MainWindow::selectAll()
+{
+    qDebug() << "selectAll";
+    QItemSelectionModel * selection = tableView->selectionModel();
+    selection->select(QItemSelection(tableView->model()->index(0, 0),
+                                     tableView->model()->index(tableModel->rowCount() - 1, columnHeader.size() - 1)),
+                      QItemSelectionModel::ClearAndSelect);
 }
 

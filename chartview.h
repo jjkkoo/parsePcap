@@ -33,6 +33,8 @@ public:
 
 signals:
     void updateStartPosFromClick(double posPercent);
+    void showAllOneSecondPoints();
+    void showAllSampledPoints();
 
 protected:
     void resizeEvent(QResizeEvent *event) override;

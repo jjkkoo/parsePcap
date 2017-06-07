@@ -30,6 +30,8 @@ enum tableColumns
 };
 #endif
 
+const QStringList columnHeader{"source ip","srcPort","dest ip","destPort","first packet time","last packet time","pktCount","PT","SSRC","codec","Lost","Dup","WrongSeq","MaxDelta(s/seq)"};
+
 class CustomTableModel : public QAbstractTableModel
 {
     Q_OBJECT
@@ -50,12 +52,12 @@ public:
     QStringList getLine(int index);
     void toggleMarkUnmark(QSet<int> targetList);
     std::set<int> getMarked();
+    void clearMarked();
 
 private:
     int m_columnCount;
     int m_rowCount;
 
-    const QStringList columnHeader{"source ip","srcPort","dest ip","destPort","first packet time","last packet time","pktCount","PT","SSRC","codec","Lost","Dup","WrongSeq","MaxDelta(s/seq)"};
     QList<QStringList> m_data;
     std::set<int> markedList;
 

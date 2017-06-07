@@ -80,6 +80,9 @@ private slots:
     void updatePlayfilePos(double posPercent);
     void toggleMark();
     void seekMark();
+    void selectAll();
+    void showAllOneSecondPoints();
+    void showAllSampledPoints();
 
 private:
     void createActions();
