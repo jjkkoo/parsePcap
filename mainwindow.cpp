@@ -47,7 +47,7 @@ MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
     connect(chartView, &ChartView::showAllOneSecondPoints, this, &MainWindow::showAllOneSecondPoints);
     connect(chartView, &ChartView::showAllSampledPoints, this, &MainWindow::showAllSampledPoints);
 
-    QSplitter *splitter = new QSplitter(Qt::Vertical);
+    splitter = new QSplitter(Qt::Vertical);
     splitter->addWidget(tableView);
     splitter->addWidget(chartView);
 
@@ -77,7 +77,8 @@ MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
 void MainWindow::initUI()
 {
     m_pProgressBar->hide();
-    chartView->hide();
+    //chartView->hide();    //buggy
+    splitter->setSizes(QList<int>{splitter->height(), 0});
     statusBar()->showMessage("");
 }
 
@@ -378,7 +379,9 @@ void MainWindow::plotOnChart(QList<int>indexList)
         audio = nullptr;
     }
     chartView->refreshProgress(0);
-    chartView->show();
+    chartView->resizeProgressLine();
+    //chartView->show();
+    splitter->setSizes(QList<int>{splitter->height() / 2, splitter->height() / 2});
     mediaDataFile.close();
     currentPlotIndex = indexList.at(0);
     PlayerFile = m_tempDecodedFile.at(indexList.at(0));
@@ -587,6 +590,7 @@ void MainWindow::pushTimerExpired()
            --chunks;
         }
         if (currentPlayPos >= currentFileSize) {
+            chartView->finishProgress();
             currentPlayPos = 0;
             m_pushTimer->stop();
             audio->stop();

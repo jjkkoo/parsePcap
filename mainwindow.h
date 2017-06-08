@@ -117,6 +117,7 @@ private:
     QTableView *tableView;
     CustomTableModel *tableModel;
     ChartView *chartView;
+    QSplitter *splitter;
     QChart *chart;
     QLineSeries *series;
     QProgressBar *m_pProgressBar;

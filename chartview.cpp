@@ -33,6 +33,12 @@ void ChartView::refreshProgress(double progress)
         progressLine->update();
 }
 
+void ChartView::finishProgress()
+{
+    progressLine->setPos(PLWidth);
+    progressLine->update();
+}
+
 void ChartView::setDataLength(int dataLen) {
     m_dataLength[0] = dataLen;
 }
@@ -174,3 +180,10 @@ void ChartView::keyPressEvent(QKeyEvent *event)
 //    qDebug() << this->mapToGlobal(geometry().topLeft());
 //    QChartView::paintEvent(event);
 //}
+
+void ChartView::resizeProgressLine()
+{
+    PLWidth = chart()->plotArea().toRect().width();
+    progressLine->setGeometry(chart()->plotArea().toRect());
+    progressLine->update();
+}

@@ -30,6 +30,8 @@ public:
     void setZoomInfo(zoomInfo zi);
     zoomInfo getZoomInfo(int index);
     void refreshProgress(double progress);
+    void resizeProgressLine();
+    void finishProgress();
 
 signals:
     void updateStartPosFromClick(double posPercent);
