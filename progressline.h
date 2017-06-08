@@ -22,7 +22,7 @@ private:
     QWidget * parent;
     int position_current;
     int position_start;
-    QList<QRect> playHistory;
+    //QList<QRect> playHistory;
     //int position_end;
 };
 

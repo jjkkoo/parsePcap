@@ -157,8 +157,9 @@ void MainWindow::parseFinished(QList<QStringList> parsedList,  QList<QTemporaryF
     for ( int i = beforeAppendRowCount; i < tableModel->rowCount(); ++i ) {
         tableView->openPersistentEditor( tableModel->index(i, COL_codec) );
     }
-    tableView->resizeColumnsToContents();
-    tableView->horizontalHeader()->setStretchLastSection(true);
+    for (int i = 0; i < tableModel->columnCount() - 1; ++i){
+        tableView->resizeColumnToContents(i);
+    }
     tableView->scrollToBottom();
     m_tempMediaFile.append(fileNameList);
     m_tempDecodedFile.append(QVector<QTemporaryFile * >(fileNameList.size(), nullptr));
@@ -243,6 +244,7 @@ void MainWindow::clearTable()
         audio->stop();
         audio = nullptr;
     }
+    currentPlotIndex = -1;
     PlayerFile = nullptr;
     currentSampleRate = 0;
     qDebug() << "clearFile action" << m_tempMediaFile.count() << m_tempDecodedFile.count();
@@ -329,15 +331,8 @@ void MainWindow::plot()
             waitForPlotList.append(indexList[0]);
             startDecoding(indexList[0]);
         }
-        else {
-            if (currentPlotIndex == indexList[0]){
-                //todo reset zooming
-            }
-            else {
-                plotOnChart(indexList);
-            }
-        }
-
+        else
+            plotOnChart(indexList);
 }
 
 void MainWindow::plotOnChart(QList<int>indexList)
@@ -347,61 +342,71 @@ void MainWindow::plotOnChart(QList<int>indexList)
         statusBar()->showMessage("error reading cache files!");
         return;
     }
-    double codec = (tableModel->index(indexList[0], COL_codec).data().toString() == "0") ? 1.0 / 8000 : 1.0 /16000;
-    double maxLen = mediaDataFile.size()/2.0*codec;
-    //qDebug() << "maxLen: " << maxLen << "filesize" << mediaDataFile.size();
-    zoomInfo zi{0, maxLen, maxLen, maxLen};
-    chartView->setZoomInfo(zi);
+    if (waitForPlotList.empty() and currentPlotIndex == indexList[0]) {    //reset chartView
+        zoomInfo zi = chartView->getZoomInfo(0);
+        zoomInfo newZi{0, zi.max, zi.max, zi.max};
+        chartView->setZoomInfo(newZi);
+        showAllSampledPoints();
+        if (newZi.step < 0.05)
+            series->setPointsVisible(true);
+        else
+            series->setPointsVisible(false);
+        chart->axisX(series)->setRange(0, newZi.end);
+    }
+    else {
+        double codec = (tableModel->index(indexList[0], COL_codec).data().toString() == "0") ? 1.0 / 8000 : 1.0 /16000;
+        double maxLen = mediaDataFile.size()/2.0*codec;
+        zoomInfo zi{0, maxLen, maxLen, maxLen};
+        chartView->setZoomInfo(zi);
 
-    QVector<QPointF> points;
-    char shortData[2];
-    int tempMax = 0, tempCounter = 0, pLen = mediaDataFile.size() / 2,
-            threashHolder = pLen / 16000;
-//        qDebug() << QDateTime::currentDateTime();
-    for (int k = 0; k < pLen; ++k) {
-        mediaDataFile.read(shortData, 2);
-        if (++tempCounter > threashHolder) {
-            points.append( QPointF(k * codec, *(short *)shortData ));
-            if (qAbs(*(short *)shortData) > tempMax)
-                tempMax = qAbs(*(short *)shortData);
-            tempCounter = 0;
+        QVector<QPointF> points;
+        char shortData[2];
+        unsigned int tempCounter = 0, pLen = mediaDataFile.size() / 2, threashHolder = pLen / 16000;
+        int tempMax = 0;
+        for (unsigned int k = 0; k < pLen; ++k) {
+            mediaDataFile.read(shortData, 2);
+            if (++tempCounter > threashHolder) {
+                points.append( QPointF(k * codec, *(short *)shortData ));
+                if (qAbs(*(short *)shortData) > tempMax)
+                    tempMax = qAbs(*(short *)shortData);
+                tempCounter = 0;
+            }
         }
-    }
-//        qDebug() << QDateTime::currentDateTime();
-    chart->axisX(series)->setRange(0, mediaDataFile.size()/2.0*codec );
-    if (tempMax > 0)    // setRange(-0, 0) will crash;
-        chart->axisY(series)->setRange(-tempMax, tempMax );
-   // qDebug() << points;
-    series->replace(points);
-    series->setName(QString("index:%1_%2_%3_%4_%5").arg(indexList[0] + 1).arg(tableModel->index(indexList[0], COL_source_ip).data().toString()).arg(tableModel->index(indexList[0], COL_srcPort).data().toString())
-            .arg(tableModel->index(indexList[0], COL_dest_ip).data().toString()).arg(tableModel->index(indexList[0], COL_destPort).data().toString()));
-    QPen pen(QColor("#607B8B"));    //LightSkyBlue4: #607B8B    #E6E6FA: lavender
-    series->setPen(pen);
-    if (audio != nullptr) {
-        audio->stop();
-        audio = nullptr;
-    }
-    if (zi.step < 0.05)
-        series->setPointsVisible(true);
-    else
-        series->setPointsVisible(false);
-    chartView->refreshProgress(0);
-    chartView->resizeProgressLine();
-    //chartView->show();
+        chart->axisX(series)->setRange(0, maxLen );
+        if (tempMax > 0)    // setRange(-0, 0) will crash;
+            chart->axisY(series)->setRange(-tempMax, tempMax );
+        series->replace(points);
+        series->setName(QString("index:%1_%2_%3_%4_%5").arg(indexList[0] + 1).arg(tableModel->index(indexList[0], COL_source_ip).data().toString()).arg(tableModel->index(indexList[0], COL_srcPort).data().toString())
+                .arg(tableModel->index(indexList[0], COL_dest_ip).data().toString()).arg(tableModel->index(indexList[0], COL_destPort).data().toString()));
+        QPen pen(QColor("#607B8B"));    //LightSkyBlue4: #607B8B    #E6E6FA: lavender
+        series->setPen(pen);
 
-    splitter->setSizes(QList<int>{splitter->height() / 2, splitter->height() / 2});
-    mediaDataFile.close();
-    currentPlotIndex = indexList.at(0);
-    PlayerFile = m_tempDecodedFile.at(indexList.at(0));
-    currentFileSize = PlayerFile->size();
-    currentPlayPos = 0;
-    //startPlayPos = 0;
-    switch (m_codecVector.at(indexList.at(0))) {
-        case 0:
-        case 2:    currentSampleRate = 8000;    break;
-        case 1:
-        case 3:    currentSampleRate = 16000;   break;
-        default:   currentSampleRate = 8000;
+        if (audio != nullptr) {
+            audio->stop();
+            audio = nullptr;
+        }
+
+        if (zi.step < 0.05)
+            series->setPointsVisible(true);
+        else
+            series->setPointsVisible(false);
+
+        chartView->refreshProgress(0);
+        chartView->resizeProgressLine();
+        splitter->setSizes(QList<int>{splitter->height() / 2, splitter->height() / 2});
+        mediaDataFile.close();
+        currentPlotIndex = indexList.at(0);
+        PlayerFile = m_tempDecodedFile.at(indexList.at(0));
+        currentFileSize = PlayerFile->size();
+        currentPlayPos = 0;
+        startPlayPos = 0;
+        switch (m_codecVector.at(indexList.at(0))) {
+            case 0:
+            case 2:    currentSampleRate = 8000;    break;
+            case 1:
+            case 3:    currentSampleRate = 16000;   break;
+            default:   currentSampleRate = 8000;
+        }
     }
 }
 
@@ -440,13 +445,17 @@ void MainWindow::showAllSampledPoints()
         statusBar()->showMessage("error reading cache files!");
         return;
     }
+    unsigned int tempCounter = 0, pLen = mediaDataFile.size() / 2, threashHolder = pLen / 16000;
     QVector<QPointF> points;
     char shortData[2];
     double codec = 1.0 / currentSampleRate;
-    int pLen = mediaDataFile.size() / 2;
-    for (int k = 0; k < pLen; ++k) {
+
+    for (unsigned int k = 0; k < pLen; ++k) {
         mediaDataFile.read(shortData, 2);
-        points.append( QPointF(k * codec, *(short *)shortData ));
+        if (++tempCounter > threashHolder) {
+            points.append( QPointF(k * codec, *(short *)shortData ));
+            tempCounter = 0;
+        }
     }
     series->replace(points);
 }

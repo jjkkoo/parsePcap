@@ -7,7 +7,7 @@ QString parseError;
 struct bpf_program fcode;
 u_int netmask = 0xffffff;
 
-int getIpv6Addr(char *output, int *output_len, u_char *input) {
+int getIpv6Addr(char *output, u_char *input) {
     int j = 0, ret = 0 ;
     for (int i = 0; i < 8; ++i) {
         if (*(input + 2 * i) == 0)
@@ -20,7 +20,6 @@ int getIpv6Addr(char *output, int *output_len, u_char *input) {
         if (i < 7)
             sprintf (output + j++, ":");
     }
-    //*output_len = j;
     return 0;
 }
 
@@ -153,7 +152,7 @@ void ParseThread::run()
         return;
     }
 
-    eth_header *eh;
+    //eth_header *eh;
     ip_header *ih;
     ipv6_header *ihv6;
     udp_header *uh;
@@ -174,7 +173,6 @@ void ParseThread::run()
     QHash<QString, parseResultInfo> parseResultDict;
     //const char magicByte[] = {"\xb4\xc3\xb2\xa1"};
     char sourceIpv6Buffer[40], destIpv6Buffer[40];
-    int *sourceIPv6Len = 0,  *destIpv6len = 0;
     char ip_version;
     unsigned short mediaLen;
 
@@ -204,10 +202,10 @@ void ParseThread::run()
         else if(ip_version == 0x60){
             /* retrieve ipv6 header */
             ihv6 = (ipv6_header *) (pkt_data + dl_len); //length of ethernet header
-            if (getIpv6Addr(sourceIpv6Buffer, sourceIPv6Len, ihv6->Srcv6) == 0) {
+            if (getIpv6Addr(sourceIpv6Buffer, ihv6->Srcv6) == 0) {
                 sourceIp = QString(sourceIpv6Buffer);
             }
-            if (getIpv6Addr(destIpv6Buffer, destIpv6len, ihv6->Destv6) == 0) {
+            if (getIpv6Addr(destIpv6Buffer, ihv6->Destv6) == 0) {
                 destIp = QString(destIpv6Buffer);
             }
 
@@ -218,7 +216,7 @@ void ParseThread::run()
             return;
         }
         /* assure udp packet */
-        if (ip_version == 0x40 and ih->proto != 0x11 or ip_version == 0x60 and ihv6->next_header!= 0x11)    continue;
+        if ((ip_version == 0x40 and ih->proto != 0x11) or (ip_version == 0x60 and ihv6->next_header!= 0x11))    continue;
         /* retrieve udp header */
         uh = (udp_header *) (pkt_data + dl_len + ip_len);
 
@@ -255,12 +253,13 @@ void ParseThread::run()
                     mediaLen = header->len - dl_len - ip_len - 8 - rtp_len;
                     parseResultDict[tempHashKey].mediaFile->write((char *) &mediaLen, sizeof(mediaLen));
                     int numWritten = parseResultDict[tempHashKey].mediaFile->write((char *)rh + rtp_len, mediaLen);
+                    Q_UNUSED(numWritten);
                     //parseResultDict[tempHashKey].mediaFile->write(magicByte);
                 }
                 else {
                     /* create new depository entry */
                     QStringList tmpSL;
-                    tmpSL << sourceIp << srcPort << destIp << destPort << pktDateTime << pktDateTime << "" << payloadType << ssrc << QString::number(m_PtMap[rh->pt-96]) << "" << "" << "" << "";
+                    tmpSL << sourceIp << srcPort << destIp << destPort << pktDateTime << pktDateTime << "" << payloadType << ssrc << QString::number(m_PtMap[rh->pt-96]) << "" << "" << "" << "" <<"";
                     parseResult.append(tmpSL);
 
                     QTemporaryFile *tmpFile = new QTemporaryFile("temp\\parsePcap"); //todo free memory
@@ -270,6 +269,7 @@ void ParseThread::run()
                         //qDebug() << header->len << dl_len << ip_len << rtp_len << mediaLen;
                         tmpFile->write((char *) &mediaLen, sizeof(mediaLen));
                         int numWritten = tmpFile->write((char *)rh + rtp_len, mediaLen);
+                        Q_UNUSED(numWritten);
                         //tmpFile->write(magicByte);
                     }
                     parseResultInfo *pri = new parseResultInfo {parseResult.size() - 1, 1, tmpFile};    //todo free memory

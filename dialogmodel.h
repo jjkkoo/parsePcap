@@ -6,27 +6,6 @@
 #include <QtCore/QRect>
 #include <QVector>
 
-#ifndef COLUMNS_H
-#define COLUMNS_H
-enum tableColumns
-{
-    COL_source_ip,
-    COL_srcPort,
-    COL_dest_ip,
-    COL_destPort,
-    COL_first_packet_time,
-    COL_last_packet_time,
-    COL_pktCount,
-    COL_PT,
-    COL_SSRC,
-    COL_codec,
-    COL_Lost,
-    COL_Dup,
-    COL_WrongSeq,
-    COL_MaxDelta
-};
-#endif
-
 class dialogModel : public QAbstractTableModel
 {
     Q_OBJECT

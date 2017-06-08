@@ -30,7 +30,7 @@ enum tableColumns
 };
 #endif
 
-const QStringList columnHeader{"source ip","srcPort","dest ip","destPort","first packet time","last packet time","pktCount","PT","SSRC","codec","Lost","Dup","WrongSeq","MaxDelta(s/seq)"};
+const QStringList columnHeader{"source ip","srcPort","dest ip","destPort","first packet time","last packet time","pktCount","PT","SSRC","codec","Lost","Dup","WrongSeq","MaxDelta(s/seq)","stopgap"};
 
 class CustomTableModel : public QAbstractTableModel
 {

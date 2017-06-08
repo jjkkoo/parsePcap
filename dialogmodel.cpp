@@ -26,8 +26,9 @@ QVariant dialogModel::headerData(int section, Qt::Orientation orientation, int r
 
     if (orientation == Qt::Horizontal) {
         return columnHeader.at(section);
-        qDebug() << columnHeader.at(section);
+        //qDebug() << columnHeader.at(section);
     }
+    return QVariant();
 }
 
 QVariant dialogModel::data(const QModelIndex &index, int role) const
@@ -66,6 +67,7 @@ Qt::ItemFlags dialogModel::flags(const QModelIndex &index) const
 {
     if (index.column() == 1)
         return QAbstractItemModel::flags(index) | Qt::ItemIsEditable;
+    return QAbstractItemModel::flags(index);
 }
 /*
 bool dialogModel::insertRows(int position, int rows, const QModelIndex &parent)

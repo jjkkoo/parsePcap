@@ -1,7 +1,7 @@
 #include "progressline.h"
 
 ProgressLine::ProgressLine(QWidget * parent = nullptr) : QWidget{parent},
-    position_current(0), position_start(0), playHistory(QList<QRect>())//, position_end(0)
+    position_current(0), position_start(0)//, playHistory(QList<QRect>())//, position_end(0)
 {
     setAttribute(Qt::WA_NoSystemBackground);
     setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -28,7 +28,8 @@ void ProgressLine::setStartPos(int pos) {
 }
 
 void ProgressLine::reset() {
-    playHistory.clear();
+    position_start = 0;
+    //playHistory.clear();
     position_current = 0;
 }
 

@@ -70,7 +70,7 @@ void ChartView:: wheelEvent(QWheelEvent *event)
     int tempPos = progressLine->mapFromGlobal(event->globalPos()).x();//current mouse posion in plot
     //qDebug() << tempPos << 1.0 * tempPos/PLWidth *zoomInfoList[0].step + zoomInfoList[0].start << PLWidth << zoomInfoList[0].start;
     if (numDegrees.y() > 0) {                                    //zoom in
-        if (zoomInfoList.at(0).step > 0.002) {                       //least step 20ms
+        if (zoomInfoList.at(0).step > 0.002) {                       //least step 2ms
             zoomInfoList[0].start = zoomInfoList[0].start + 0.2 * tempPos / PLWidth * zoomInfoList[0].step;
             zoomInfoList[0].step = zoomInfoList[0].step * 0.8;    //zoom in 80%
             zoomInfoList[0].end = zoomInfoList[0].start + zoomInfoList[0].step;
@@ -186,5 +186,6 @@ void ChartView::resizeProgressLine()
 {
     PLWidth = chart()->plotArea().toRect().width();
     progressLine->setGeometry(chart()->plotArea().toRect());
+    progressLine->reset();
     progressLine->update();
 }
