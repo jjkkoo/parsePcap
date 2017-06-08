@@ -70,16 +70,17 @@ void ChartView:: wheelEvent(QWheelEvent *event)
     int tempPos = progressLine->mapFromGlobal(event->globalPos()).x();//current mouse posion in plot
     //qDebug() << tempPos << 1.0 * tempPos/PLWidth *zoomInfoList[0].step + zoomInfoList[0].start << PLWidth << zoomInfoList[0].start;
     if (numDegrees.y() > 0) {                                    //zoom in
-        if (zoomInfoList.at(0).step > 0.02) {                       //least step 20ms
+        if (zoomInfoList.at(0).step > 0.002) {                       //least step 20ms
             zoomInfoList[0].start = zoomInfoList[0].start + 0.2 * tempPos / PLWidth * zoomInfoList[0].step;
             zoomInfoList[0].step = zoomInfoList[0].step * 0.8;    //zoom in 80%
             zoomInfoList[0].end = zoomInfoList[0].start + zoomInfoList[0].step;
             //qDebug() << zoomInfoList[0].start << 1.0 * tempPos/PLWidth *zoomInfoList[0].step + zoomInfoList[0].start;
             chart()->axisX()->setRange(QVariant(zoomInfoList.at(0).start), QVariant(zoomInfoList.at(0).end));
 
-            if (zoomInfoList.at(0).step < 1 and zoomInfoList.at(0).step > 0.8){
+            if (zoomInfoList.at(0).step < 1 and zoomInfoList.at(0).step > 0.8)
                 emit showAllOneSecondPoints();
-            }
+            if (zoomInfoList.at(0).step < 0.05 and zoomInfoList.at(0).step > 0.04)
+                dynamic_cast<QLineSeries*>(chart()->series()[0])->setPointsVisible(true);
         }
     }
     else {                                                       //zoom out
@@ -99,9 +100,10 @@ void ChartView:: wheelEvent(QWheelEvent *event)
                 chart()->axisX()->setRange(QVariant(zoomInfoList.at(0).start), QVariant(zoomInfoList.at(0).end));
             }
         }
-        if (zoomInfoList.at(0).step > 1 and zoomInfoList.at(0).step < 1.25){
+        if (zoomInfoList.at(0).step > 1 and zoomInfoList.at(0).step < 1.25)
             emit showAllSampledPoints();
-        }
+        if (zoomInfoList.at(0).step > 0.05 and zoomInfoList.at(0).step < 0.0625)
+            dynamic_cast<QLineSeries*>(chart()->series()[0])->setPointsVisible(false);
     }
 //    qDebug() << chart()->plotArea();
 //    qDebug() << this->mapToGlobal(chart()->plotArea().topLeft().toPoint());

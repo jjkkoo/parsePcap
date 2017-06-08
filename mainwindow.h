@@ -24,7 +24,7 @@ QT_END_NAMESPACE
 
 #include <QtCharts/QChart>
 //#include <QtCharts/QChartView>
-#include <QtCharts/QLineSeries>
+//#include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
 //#include <QtCharts/QVXYModelMapper>
 #include <QtWidgets/QHeaderView>

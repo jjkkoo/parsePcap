@@ -3,6 +3,7 @@
 #define CHARTVIEW_H
 
 #include <QtCharts/QChartView>
+#include <QtCharts/QLineSeries>
 //#include <QtWidgets/QRubberBand>
 
 #include <QDebug>

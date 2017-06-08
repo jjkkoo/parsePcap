@@ -346,7 +346,7 @@ void MainWindow::plotOnChart(QList<int>indexList)
     }
     double codec = (tableModel->index(indexList[0], COL_codec).data().toString() == "0") ? 1.0 / 8000 : 1.0 /16000;
     double maxLen = mediaDataFile.size()/2.0*codec;
-
+    //qDebug() << "maxLen: " << maxLen << "filesize" << mediaDataFile.size();
     zoomInfo zi{0, maxLen, maxLen, maxLen};
     chartView->setZoomInfo(zi);
 
