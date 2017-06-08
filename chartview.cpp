@@ -108,7 +108,6 @@ void ChartView:: wheelEvent(QWheelEvent *event)
 //    qDebug() << chart()->plotArea();
 //    qDebug() << this->mapToGlobal(chart()->plotArea().topLeft().toPoint());
 //    qDebug() << zoomInfoList.at(0).start << ";" << zoomInfoList.at(0).end << ";" << zoomInfoList.at(0).step << ";" << zoomInfoList.at(0).max;
-    //this->se
     event->accept();
 }
 

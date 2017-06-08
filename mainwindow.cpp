@@ -14,6 +14,7 @@ MainWindow::MainWindow() : m_tempMediaFile(QList<QTemporaryFile *>()) ,
     tableView = new CustomTableView;
     //tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     tableView->resizeColumnsToContents();
+    tableView->horizontalHeader()->setStretchLastSection(true);
 
     tableModel = new CustomTableModel;
     tableView->setModel(tableModel);
@@ -157,6 +158,8 @@ void MainWindow::parseFinished(QList<QStringList> parsedList,  QList<QTemporaryF
         tableView->openPersistentEditor( tableModel->index(i, COL_codec) );
     }
     tableView->resizeColumnsToContents();
+    tableView->horizontalHeader()->setStretchLastSection(true);
+    tableView->scrollToBottom();
     m_tempMediaFile.append(fileNameList);
     m_tempDecodedFile.append(QVector<QTemporaryFile * >(fileNameList.size(), nullptr));
     m_codecVector.append(QVector<int>(fileNameList.size(), -1));
@@ -378,9 +381,14 @@ void MainWindow::plotOnChart(QList<int>indexList)
         audio->stop();
         audio = nullptr;
     }
+    if (zi.step < 0.05)
+        series->setPointsVisible(true);
+    else
+        series->setPointsVisible(false);
     chartView->refreshProgress(0);
     chartView->resizeProgressLine();
     //chartView->show();
+
     splitter->setSizes(QList<int>{splitter->height() / 2, splitter->height() / 2});
     mediaDataFile.close();
     currentPlotIndex = indexList.at(0);
@@ -831,6 +839,7 @@ void MainWindow::seekMark()
     selection->select(QItemSelection(tableView->model()->index(*it, 0),
                                      tableView->model()->index(*it, columnHeader.size() - 1)),
                       QItemSelectionModel::ClearAndSelect);
+    tableView->scrollTo(tableView->model()->index(*it, 0));
 
 }
 
