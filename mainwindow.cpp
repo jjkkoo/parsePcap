@@ -295,13 +295,13 @@ void MainWindow::decodeFinished(QTemporaryFile * decodeResult)
         m_tempDecodedFile[waitForPlotList.at(0)] = decodeResult;
         m_codecVector[waitForPlotList.at(0)] = tableModel->index(waitForPlotList.at(0), COL_codec).data().toInt();
         plotOnChart(waitForPlotList);
-        waitForPlotList.clear();
+        //waitForPlotList.clear();
     }
     else if (waitForExportList.size() > 0){
         m_tempDecodedFile[waitForExportList.at(0)] = decodeResult;
         m_codecVector[waitForExportList.at(0)] = tableModel->index(waitForExportList.at(0), COL_codec).data().toInt();
         exportAfterDecode(waitForExportList);
-        waitForExportList.clear();
+        //waitForExportList.clear();
     }
 }
 
@@ -310,6 +310,8 @@ void MainWindow::decodeThrOver()
     m_pProgressBar->hide();
     decodeThread->deleteLater();
     decodeThread = nullptr;
+    waitForPlotList.clear();
+    waitForExportList.clear();
 }
 
 void MainWindow::plot()

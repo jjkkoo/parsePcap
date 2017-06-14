@@ -71,7 +71,8 @@ void DecodeThread::run()
 
     if ((f_serial = fopen(qPrintable(decodeFile->fileName()), "rb")) == NULL)
     {
-        qDebug() << "error open input file:" << decodeFile->fileName();
+        //qDebug() << "error open input file:" << decodeFile->fileName();
+        emit lastWords("error open cache file");
         return;
     }
 
@@ -90,7 +91,10 @@ void DecodeThread::run()
     unsigned char serial[speechBufferLen], pktBuffer[speechBufferLen * 12];
 
     while(fread(&pktLen, sizeof(unsigned short), 1, f_serial)) {
-        if (m_abort)    return;
+        if (m_abort)    {
+            emit lastWords("decoding cancelled");
+            return;
+        }
         tempByteRead += (2 + pktLen);
         //qDebug() << tempByteRead << " " << filesize;
         if (100 * ++tempByteRead / filesize > currentProgress)
@@ -99,9 +103,10 @@ void DecodeThread::run()
         FTCount = 0;
         bytePtr = 0;
         currentFTptr = 4;
-        if (fread(pktBuffer, sizeof (unsigned char), pktLen, f_serial )!=pktLen){     //read whole packet
-            qWarning() << "error reading packets";
-            break;
+        if ((pktLen > sizeof pktBuffer) or (fread(pktBuffer, sizeof (unsigned char), pktLen, f_serial )!=pktLen)){     //read whole packet
+            //qWarning() << "error reading packets";
+            emit lastWords("error reading packets, probably unknown type of stream");
+            return;
         }
         /* get all FT into an array, max len 12 */
         while (FTCount < 12 and bytePtr < pktLen) {

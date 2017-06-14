@@ -179,8 +179,10 @@ void ParseThread::run()
     m_parseResult->clear();
     while((res = pcap_next_ex( fp, &header, &pkt_data)) >= 0)
     {
-        if (m_abort)    return;
-
+        if (m_abort) {
+            emit lastWords("parsing cancelled");
+            return;
+        }
         if (100 * ++currentPacketNo / packetCount > currentProgress) {
             emit updateProgress(++currentProgress);
         }
